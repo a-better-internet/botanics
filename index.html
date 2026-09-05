@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SVG BOTANICAL SEQUENCER v1.0</title>
+<title>SVG BOTANICAL SEQUENCER v1.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
@@ -89,9 +89,13 @@
   #stage{flex:1;position:relative;min-height:0;background:var(--canvas);overflow:hidden;}
   #stage.pruneC{cursor:crosshair;}
   #svg{width:100%;height:100%;display:block;background:
-     linear-gradient(180deg,#0a0d0a 0%,#0a1410 60%,#081a0f 100%);}
+     linear-gradient(180deg,#080b09 0%,#0a1410 58%,#08190f 88%,#0b2114 100%);}
+  /* atmosphere: ground haze + a vignette so the canopy sits IN something */
+  #stage::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(120% 62% at 50% 104%, rgba(60,190,120,.13), rgba(60,190,120,0) 62%),
+      radial-gradient(78% 68% at 50% 46%, rgba(0,0,0,0) 46%, rgba(0,0,0,.42) 100%);}
   #svg line.seg{stroke-linecap:round;transition:stroke .2s;}
-  #svg line.seg:hover{stroke:var(--sel)!important;}
   .leafdot{}
   #hud{position:absolute;top:6px;left:6px;font-family:"VT323",monospace;font-size:15px;color:#6fffa8;
     text-shadow:0 0 4px #0f0;pointer-events:none;line-height:1.15;}
@@ -182,14 +186,14 @@
           <label class="row"><span>WIND ±°</span><input id="wind" type="range" min="0" max="18" step="0.5" value="0"><span class="val" id="windV">0</span></label>
           <label class="row"><span>SPECIES</span></label>
           <select id="species">
-            <option value="fern">FERN (fm carrier)</option>
-            <option value="oak">OAK (saw / thick)</option>
-            <option value="reed">REED (sine / pure)</option>
-            <option value="thorn">THORN (square / harsh)</option>
-            <option value="bell">BELL (fm sine / metallic)</option>
-            <option value="bow">BOW (bowed string)</option>
-            <option value="glass">GLASS (crystalline resonance)</option>
-            <option value="breath">BREATH (airy hush)</option>
+            <option value="fern">FERN (soft fm · woody)</option>
+            <option value="oak">OAK (saw · dark &amp; thick)</option>
+            <option value="reed">REED (sine + breath)</option>
+            <option value="thorn">THORN (square · bright)</option>
+            <option value="bell">BELL (inharmonic fm)</option>
+            <option value="bow">BOW (saw + bow scratch)</option>
+            <option value="glass">GLASS (high-Q air)</option>
+            <option value="breath">BREATH (mostly air)</option>
           </select>
         </div>
       </div>
@@ -246,11 +250,12 @@
     <div id="right">
       <div class="panel bevel-out">
         <div class="group"><span class="legend">◄ RHIZOME MIX ►</span>
-          <label class="row"><span>MASTER</span><input id="master" type="range" min="0" max="100" value="62"><span class="val" id="masterV">62</span></label>
+          <label class="row"><span>MASTER</span><input id="master" type="range" min="0" max="100" value="72"><span class="val" id="masterV">72</span></label>
           <label class="row"><span>CANOPY</span><input id="canopy" type="range" min="0" max="100" value="70"><span class="val" id="canopyV">70</span></label>
-          <label class="row"><span>ROOTS/SUB</span><input id="roots" type="range" min="0" max="100" value="55"><span class="val" id="rootsV">55</span></label>
+          <label class="row"><span>ROOTS/SUB</span><input id="roots" type="range" min="0" max="100" value="42"><span class="val" id="rootsV">42</span></label>
           <label class="row"><span>NOISE FLR</span><input id="noise" type="range" min="0" max="100" value="30"><span class="val" id="noiseV">30</span></label>
           <label class="row"><span>REVERB</span><input id="verb" type="range" min="0" max="100" value="45"><span class="val" id="verbV">45</span></label>
+          <label class="row"><span>DAMP</span><input id="damp" type="range" min="0" max="100" value="55"><span class="val" id="dampV">55</span></label>
           <label class="row"><span>LOW dB</span><input id="lo" type="range" min="-12" max="12" step="0.5" value="0"><span class="val" id="loV">0</span></label>
           <label class="row"><span>MID dB</span><input id="himid" type="range" min="-12" max="12" step="0.5" value="0"><span class="val" id="himidV">0</span></label>
           <label class="row"><span>AIR dB</span><input id="air" type="range" min="0" max="12" step="0.5" value="4"><span class="val" id="airV">4</span></label>
@@ -262,11 +267,24 @@
       </div>
 
       <div class="panel bevel-out">
+        <div class="group"><span class="legend">◄ ORGANICS ►</span>
+          <label class="row"><span>ARTICULATE</span><input id="articulate" type="range" min="0" max="100" value="60"><span class="val" id="articulateV">60</span></label>
+          <label class="row"><span>WANDER ¢</span><input id="wander" type="range" min="0" max="60" value="16"><span class="val" id="wanderV">16</span></label>
+          <label class="row"><span>GUSTS</span><input id="gust" type="range" min="0" max="100" value="45"><span class="val" id="gustV">45</span></label>
+          <label class="row"><span>TICKS</span><input id="ticks" type="range" min="0" max="100" value="35"><span class="val" id="ticksV">35</span></label>
+          <label class="row"><span>BLOOM</span><input id="bloom" type="range" min="0" max="100" value="25"><span class="val" id="bloomV">25</span></label>
+          <div class="tiny" style="margin-top:3px">staggered birth · random-walk mistuning · travelling wind · seed-ticks &amp; canopy drops</div>
+          <button class="b on" id="gravity" style="width:100%;margin-top:6px" title="snap compounded ratios to the nearest simple JI interval">⚖ GRAVITY: ON</button>
+          <button class="b on" id="sway" style="width:100%;margin-top:4px" title="the canopy moves with the wind">🍃 SWAY: ON</button>
+        </div>
+      </div>
+
+      <div class="panel bevel-out">
         <div class="group"><span class="legend">◄ EVOLUTION ►</span>
           <label class="row"><span>DETUNE ¢</span><input id="detune" type="range" min="0" max="40" value="10"><span class="val" id="detuneV">10</span></label>
           <label class="row"><span>DRIFT</span><input id="drift" type="range" min="0" max="100" value="40"><span class="val" id="driftV">40</span></label>
           <label class="row"><span>DENSITY</span><input id="density" type="range" min="12" max="88" step="4" value="44"><span class="val" id="densityV">44</span></label>
-          <div class="tiny" style="margin-top:3px">twin-osc chorus · slow filter &amp; detune sweep · canopy breath · voice budget</div>
+          <div class="tiny" style="margin-top:3px">3-osc chorus · slow filter &amp; detune sweep · canopy breath · voice budget</div>
           <button class="b" id="tempoSync" style="width:100%;margin-top:6px" title="lock voice pulse to cycle time for polyrhythms">🕒 TEMPO SYNC: OFF</button>
           <button class="b" id="freeze" style="width:100%;margin-top:4px" title="freeze current canopy into a sustained pad">❆ FREEZE CANOPY</button>
           <button class="b" id="perpetual" style="width:100%;margin-top:6px" title="hands-off generative regrowth">♾ PERPETUAL: OFF</button>
@@ -354,13 +372,23 @@ const S={
   // deep-time evolution
   seasons:false, harmony:false, evoRate:3,
   progRatio:1, progIdx:0, progAcc:0,
+  // organics
+  headroom:1, sway:true, bloomAcc:0, nextBloom:6000, voiced:new Set(), fresh:[], hover:null,
 };
 const P={ // params
   theta:27, seglen:34, ldecay:0.78, maxgen:6, species:"fern", wind:0,
   cycleMs:2000, fert:1, rootfreq:55, pulse:1.2,
-  master:0.62, canopy:0.70, roots:0.55, noise:0.30, verb:0.45,
+  master:0.72, canopy:0.70, roots:0.42, noise:0.30, verb:0.45,
   width:1.35, space:0.28, detune:10, drift:0.4, perpetual:false, air:4,
   lo:0, himid:0, drive:0, density:44, tempoSync:false,
+  // ---- organics: the controls that decide how alive this thing sounds ----
+  articulate:0.60,  // how much each voice swells & breathes vs. sitting as a flat drone
+  wander:16,        // cents of slow random-walk mistuning per voice
+  gust:0.45,        // depth of the wind gust that travels across the canopy
+  ticks:0.35,       // level of the birth/fall transient layer
+  bloom:0.25,       // rate & level of sparse pitched drops from the canopy
+  damp:0.55,        // reverb high-frequency damping (air absorption)
+  gravity:true,     // pull compounded ratios to the nearest simple JI interval
 };
 const PERPETUAL_HOLD=45000; // ms a completed canopy holds before perpetual re-seed
 // slow JI progression the root walks through when Harmony Drift is on (ratios vs base root)
@@ -436,13 +464,44 @@ function ratioForAngle(a){
   for(const j of JI){ const d=Math.abs(j[0]-a); if(d<bd){bd=d;best=j;} }
   return best; // [angle, ratio, label]
 }
+
+/* ---- harmonic gravity ----------------------------------------------
+   Ratios COMPOUND down a branch: six 7:6 turns give you 7^6:6^6, which is
+   a perfectly valid number and a thoroughly ugly interval against anything
+   else in the tree. Gravity pulls each compounded ratio to the simplest
+   low-limit ratio within 45 cents, so deep canopy still lands on intervals
+   the ear can resolve. Off = the raw, wilder lattice.                    */
+const LATTICE=(function(){
+  const m=new Map();
+  for(let n=1;n<=16;n++)for(let d=1;d<=16;d++){
+    let r=n/d; while(r>=2)r/=2; while(r<1)r*=2;
+    const k=r.toFixed(5), cx=n*d;
+    if(!m.has(k)||cx<m.get(k).cx) m.set(k,{r,cx});
+  }
+  return [...m.values()].sort((a,b)=>a.r-b.r);
+})();
+function gravitate(ratio){
+  if(!P.gravity||!(ratio>0)) return ratio;
+  let oct=0,r=ratio;
+  while(r>=2){r/=2;oct++;} while(r<1){r*=2;oct--;}
+  let best=null,bc=1e9;
+  for(const L of LATTICE){
+    if(Math.abs(1200*Math.log2(L.r/r))<=45 && L.cx<bc){ bc=L.cx; best=L.r; }
+  }
+  return (best||r)*Math.pow(2,oct);
+}
 function foldFreq(f,depth){
-  // register climbs with depth → trunk sits low, canopy rises into the treble
+  // Register climbs with depth so the trunk sits low and the canopy rises,
+  // but the windows now OVERLAP. The old hard octave-per-depth bands crammed
+  // every canopy voice into one narrow strip, which is most of where the mud
+  // and the clashing beats were coming from.
   depth=depth||0;
-  const lo=62*Math.pow(2,Math.min(7,depth)*0.5);
-  const hi=lo*2;
-  while(f>=hi)f/=2; while(f<lo)f*=2;
-  return Math.min(f,11000);
+  const centre=58*Math.pow(2,Math.min(6.4,depth)*0.62);
+  const lo=centre*0.62, hi=lo*2.7;
+  let guard=0;
+  while(f>=hi && guard++<32) f/=2;
+  while(f<lo  && guard++<32) f*=2;
+  return Math.min(Math.max(f,22),12000);
 }
 
 /* ============================================================
@@ -451,136 +510,267 @@ function foldFreq(f,depth){
 function interpret(str){
   const th=P.theta, base=P.seglen;
   // start bottom-center, heading straight up (-90deg)
-  const st={ x:0, y:0, ang:-90, depth:0, ratio:1, path:"r" };
+  const st={ x:0, y:0, ang:-90, depth:0, ratio:1, path:"r", parentSeg:null, pend:0 };
   const stack=[]; let cur={...st};
-  const segs=[]; // {pathId,parent,x0,y0,x1,y1,depth,ratio,turn,ang}
+  const segs=[];
   let counter={"r":0};
-  cur.path="r";
   function segLen(d){ return base*Math.pow(P.ldecay,d); }
-  let pendingTurn=0;
   for(const c of str){
     if(c==='F'||c==='G'){
       const d=cur.depth;
       const len=segLen(d);
-      // pathId: encode branch path + running seg index within this branch
       counter[cur.path]=(counter[cur.path]||0)+1;
       const pid=cur.path+"/"+counter[cur.path];
-      // deterministic "wind" jitter, stable across re-derivations
+      // Wind bends the DRAWING and detunes the voice by a few cents — it no
+      // longer knocks a branch into a different JI class. Before, a gust could
+      // silently re-tune a 7:6 limb to a 6:5, which reads as random, not windy.
+      // A real tree is slightly out of tune, not randomly re-tuned.
       const jit = P.wind>0 ? (hash01(pid)*2-1)*P.wind : 0;
       cur.ang += jit;
-      const effTurn = pendingTurn + jit;
+      const rr=ratioForAngle(cur.pend);
+      const ratio=gravitate(cur.ratio*(cur.pend>=0?rr[1]:1/rr[1]));
       const rad=cur.ang*Math.PI/180;
       const nx=cur.x+Math.cos(rad)*len, ny=cur.y+Math.sin(rad)*len;
-      const rr=ratioForAngle(effTurn);
-      const ratio=cur.ratio*(effTurn>=0?rr[1]:1/rr[1]);
+      // every branch gets a small permanent tuning error of its own, stable
+      // across re-derivation — perfect JI is sterile, near-JI beats and glows
+      const cents=jit*1.6+(hash01(pid+"c")*2-1)*2.6;
       segs.push({pathId:pid,parent:cur.parentSeg||null,x0:cur.x,y0:cur.y,x1:nx,y1:ny,
-                 depth:d,ratio:ratio,turn:effTurn,ang:cur.ang,label:rr[2]});
-      cur.x=nx; cur.y=ny; cur.ratio=ratio; cur.parentSeg=pid; pendingTurn=0;
+                 depth:d,ratio:ratio,turn:cur.pend,ang:cur.ang,cents:cents,label:rr[2]});
+      cur.x=nx; cur.y=ny; cur.ratio=ratio; cur.parentSeg=pid; cur.pend=0;
     } else if(c==='f'){                       // silent move — no voice, no segment
       const len=segLen(cur.depth), rad=cur.ang*Math.PI/180;
-      cur.x+=Math.cos(rad)*len; cur.y+=Math.sin(rad)*len; pendingTurn=0;
-    } else if(c==='+'){ cur.ang+=th; pendingTurn=th; }
-      else if(c==='-'){ cur.ang-=th; pendingTurn=-th; }
-      else if(c==='|'){ cur.ang+=180; pendingTurn=0; }
+      cur.x+=Math.cos(rad)*len; cur.y+=Math.sin(rad)*len; cur.pend=0;
+    } else if(c==='+'){ cur.ang+=th; cur.pend=th; }
+      else if(c==='-'){ cur.ang-=th; cur.pend=-th; }
+      else if(c==='|'){ cur.ang+=180; cur.pend=0; }
       else if(c==='['){
+        // pend travels on the stack. It used to be a single loop-scoped
+        // variable, so a turn made inside a bracket leaked out past the ']'
+        // and mistuned the next segment on the parent branch.
         stack.push({...cur});
-        // new branch id
         const bk=cur.path;
         counter["B"+bk]=(counter["B"+bk]||0)+1;
         cur.path=cur.path+"."+counter["B"+bk];
         cur.depth=cur.depth+1;
         if(counter[cur.path]===undefined)counter[cur.path]=0;
       } else if(c===']'){
-        cur=stack.pop();
+        if(stack.length) cur=stack.pop();
       }
-    if(segs.length>4200)break; // hard visual cap
+    if(segs.length>9000)break; // hard visual cap
   }
   return segs;
 }
 
 /* ============================================================
    3. AUDIO ENGINE (Web Audio) — Rhizome architecture
+   ------------------------------------------------------------
+   Design rule for this section: nothing in a forest is periodic.
+   Every modulation below is either a sum of incommensurate sines
+   or a band-limited random walk ("wanderer") — never a bare LFO.
+   Voices are born on staggered, hashed delays so a generation
+   arrives as a swell rather than a chord stab.
    ============================================================ */
 let ac=null, master, limiter, dry, wet, convolver, canopyBus, underBus, subOsc, subGain, noiseNode, noiseGain, noiseLP, recDest;
 let widthGain, spaceSend, ppMergeNode, breathDepth, airShelf, loShelf, midPeak, driveShaper, driveMix, freezeGain;
+let revBus, revIn, revLP, subHP, tickBus, tickSend, breezeW, breezeGain, breezeCut;
+let subOct, subOctGain, subBreath, subOctBreath;
+let WANDER=null, NZ_PINK=null;
+
+/* ---------- shared organic modulation sources ---------- */
+/* One long buffer of smoothed band-limited noise. Looped back at a very low
+   playbackRate it becomes a random-walk LFO — the most useful tool in here,
+   because periodic LFOs are exactly what make synths sound like synths.
+   Different start offsets decorrelate voices; the SAME playbackRate with
+   x-derived offsets makes one gust travel across the canopy left to right. */
+const WANDER_HZ=0.042, WANDER_SECS=48, WANDER_SR=3000;
+function wanderBuffer(){
+  if(WANDER) return WANDER;
+  // Built as a sum of octaves with 1/f amplitude, because real fluctuation has
+  // energy at every timescale: a gust has a slow arc with smaller tremors
+  // riding inside it. A single-scale walk just sounds like a slow knob turn.
+  // Each octave spans a whole number of periods, so the loop is seamless at
+  // every scale. Generated at 512 Hz — it is all sub-Hz content, and the
+  // BufferSource resamples it for free (3000 Hz is the Web Audio minimum).
+  const len=Math.floor(WANDER_SR*WANDER_SECS), buf=ac.createBuffer(1,len,WANDER_SR);
+  const d=buf.getChannelData(0);
+  for(let o=0;o<5;o++){
+    const pts=Math.pow(2,o)*4;              // 4,8,16,32,64 control points
+    const amp=Math.pow(0.55,o);
+    const cp=new Float32Array(pts);
+    for(let i=0;i<pts;i++) cp[i]=Math.random()*2-1;
+    for(let i=0;i<len;i++){
+      const p=i/len*pts, i0=Math.floor(p), fr=p-i0;
+      const sm=(1-Math.cos(fr*Math.PI))*0.5;              // cosine ease → no corners
+      d[i]+=(cp[i0%pts]*(1-sm)+cp[(i0+1)%pts]*sm)*amp;
+    }
+  }
+  // Centre it, THEN normalise. Normalising by peak magnitude alone (as this
+  // first did) leaves any DC offset intact, which turns every "wanderer" in
+  // the engine into a constant bias on its target parameter rather than a
+  // modulation of it — silently detuning and de-levelling the whole instrument.
+  let mean=0; for(let i=0;i<len;i++) mean+=d[i]; mean/=len;
+  let peak=1e-6;
+  for(let i=0;i<len;i++){ d[i]-=mean; const a=Math.abs(d[i]); if(a>peak)peak=a; }
+  for(let i=0;i<len;i++) d[i]/=peak;        // → ±1, centred on 0
+  WANDER=buf; return buf;
+}
+/* a random-walk control signal you can patch into any AudioParam */
+function makeWanderer(rateHz,depth,offset01){
+  const src=ac.createBufferSource();
+  src.buffer=wanderBuffer(); src.loop=true;
+  src.playbackRate.value=Math.max(0.02,rateHz/WANDER_HZ);
+  const g=ac.createGain(); g.gain.value=depth;
+  src.connect(g);
+  src.start(ac.currentTime,(offset01==null?Math.random():offset01)*WANDER_SECS);
+  return {src,g};
+}
+/* pink noise reads as "air" where white reads as "hiss" */
+function pinkBuffer(){
+  if(NZ_PINK) return NZ_PINK;
+  const len=Math.floor(ac.sampleRate*4), buf=ac.createBuffer(2,len,ac.sampleRate);
+  for(let ch=0;ch<2;ch++){
+    const d=buf.getChannelData(ch);
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for(let i=0;i<len;i++){
+      const w=Math.random()*2-1;
+      b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
+      b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
+      b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+      d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11; b6=w*0.115926;
+    }
+  }
+  NZ_PINK=buf; return buf;
+}
+function pinkSource(){
+  const s=ac.createBufferSource(); s.buffer=pinkBuffer(); s.loop=true; return s;
+}
+
 function buildAudio(){
   if(ac)return;
   ac=new (window.AudioContext||window.webkitAudioContext)();
   master=ac.createGain(); master.gain.value=P.master;
   limiter=ac.createDynamicsCompressor();
-  limiter.threshold.value=-8; limiter.knee.value=6; limiter.ratio.value=12;
-  limiter.attack.value=0.003; limiter.release.value=0.25;
-  // reverb
-  convolver=ac.createConvolver(); convolver.buffer=makeImpulse(3.4,2.6);
+  // gentler than before: 44 correlated drone voices through -8/12:1 pumped audibly
+  limiter.threshold.value=-3; limiter.knee.value=12; limiter.ratio.value=6;
+  limiter.attack.value=0.012; limiter.release.value=0.45;
+  // ---- reverb: frequency-dependent decay IR (see makeImpulse) ----
+  convolver=ac.createConvolver(); convolver.buffer=makeImpulse(4.2,2.4,P.damp);
   dry=ac.createGain(); wet=ac.createGain();
   wet.gain.value=P.verb; dry.gain.value=1;
   canopyBus=ac.createGain(); canopyBus.gain.value=P.canopy;
   underBus=ac.createGain(); underBus.gain.value=P.roots;
-  // ---- FREEZE bus: capture-and-hold canopy state as a sustained pad via a long-tail convolver ----
-  const freezeConv=ac.createConvolver(); freezeConv.buffer=makeImpulse(12,0.6); // long slow tail
-  freezeGain=ac.createGain(); freezeGain.gain.value=0;      // 0 = off; >0 = pad audible
+  // voices send to the reverb INDIVIDUALLY (by depth & distance) rather than the
+  // whole canopy going in at one level — that is what creates depth of field.
+  revBus=ac.createGain(); revBus.gain.value=1;
+  revLP=ac.createBiquadFilter(); revLP.type="lowpass"; revLP.frequency.value=6200; revLP.Q.value=0.5;
+  revBus.connect(revLP); revLP.connect(convolver);
+  // ---- FREEZE bus: hold the canopy as a sustained pad via a long-tail convolver ----
+  const freezeConv=ac.createConvolver(); freezeConv.buffer=makeImpulse(12,0.6,0.5);
+  freezeGain=ac.createGain(); freezeGain.gain.value=0;
   canopyBus.connect(freezeConv); freezeConv.connect(freezeGain); freezeGain.connect(dry);
-  // busses → canopy goes through reverb; underground BYPASSES reverb (reverbed sub = mud)
-  canopyBus.connect(dry); canopyBus.connect(convolver);
+  canopyBus.connect(dry);
   underBus.connect(dry);
   convolver.connect(wet);
   dry.connect(master); wet.connect(master);
+  // ---- transient layer: birth ticks, leaf-fall, bloom plucks ----
+  tickBus=ac.createGain(); tickBus.gain.value=1;
+  tickSend=ac.createGain(); tickSend.gain.value=0.55;
+  tickBus.connect(dry); tickBus.connect(tickSend); tickSend.connect(revBus);
   // ---- ping-pong "SPACE" delay (cross-fed stereo echoes, fed from canopy) ----
   spaceSend=ac.createGain(); spaceSend.gain.value=P.space;
   const dL=ac.createDelay(1.5), dR=ac.createDelay(1.5);
   dL.delayTime.value=0.27; dR.delayTime.value=0.38;
   const fbL=ac.createGain(), fbR=ac.createGain(); fbL.gain.value=0.40; fbR.gain.value=0.40;
-  // tone filters INSIDE the feedback loop → each bounce progressively darkens
   const ppTone=ac.createBiquadFilter(); ppTone.type="lowpass"; ppTone.frequency.value=2600;
   const ppToneR=ac.createBiquadFilter(); ppToneR.type="lowpass"; ppToneR.frequency.value=2600;
   spaceSend.connect(dL); spaceSend.connect(dR);
-  dL.connect(ppTone);  ppTone.connect(fbL);  fbL.connect(dR);     // L → filter → cross-feed R
-  dR.connect(ppToneR); ppToneR.connect(fbR); fbR.connect(dL);     // R → filter → cross-feed L
+  dL.connect(ppTone);  ppTone.connect(fbL);  fbL.connect(dR);
+  dR.connect(ppToneR); ppToneR.connect(fbR); fbR.connect(dL);
   ppMergeNode=ac.createChannelMerger(2);
-  ppTone.connect(ppMergeNode,0,0);    // filtered left echoes → left channel
-  ppToneR.connect(ppMergeNode,0,1);   // filtered right echoes → right channel
-  canopyBus.connect(spaceSend);
+  ppTone.connect(ppMergeNode,0,0);
+  ppToneR.connect(ppMergeNode,0,1);
+  canopyBus.connect(spaceSend); tickBus.connect(spaceSend);
   ppMergeNode.connect(master);
-  // ---- global slow "breath": tidal swell on the whole canopy over ~1 min ----
+  // delay times wander a few ms → the echoes never quite repeat (chorused tail)
+  const dLW=makeWanderer(0.031,0.006,0.1), dRW=makeWanderer(0.027,0.008,0.6);
+  dLW.g.connect(dL.delayTime); dRW.g.connect(dR.delayTime);
+  // ---- global slow "breath": tidal swell on the whole canopy ----
   const breathLfo=ac.createOscillator(); breathLfo.type="sine"; breathLfo.frequency.value=0.017;
   breathDepth=ac.createGain(); breathDepth.gain.value=P.drift*0.10;
   breathLfo.connect(breathDepth); breathDepth.connect(canopyBus.gain); breathLfo.start();
-  // ---- master → M/S width → 3-band EQ (LOW / HI-MID / AIR) → parallel DRIVE → limiter ----
+  // ...plus an aperiodic partner so the swell never repeats on a fixed period
+  const breathW=makeWanderer(0.012,P.drift*0.07,0.33); breathW.g.connect(canopyBus.gain);
+  breezeW=breathW;
+  // ---- master → M/S width → 3-band EQ → parallel DRIVE → limiter ----
   const wnode=buildWidth(master); widthGain=wnode.width; wnode.width.value=P.width;
+  subHP=ac.createBiquadFilter(); subHP.type="highpass"; subHP.frequency.value=17; subHP.Q.value=0.6;
   loShelf=ac.createBiquadFilter(); loShelf.type="lowshelf"; loShelf.frequency.value=140; loShelf.gain.value=P.lo;
   midPeak=ac.createBiquadFilter(); midPeak.type="peaking"; midPeak.frequency.value=900; midPeak.Q.value=0.9; midPeak.gain.value=P.himid;
   airShelf=ac.createBiquadFilter(); airShelf.type="highshelf"; airShelf.frequency.value=5200; airShelf.gain.value=P.air;
-  wnode.out.connect(loShelf); loShelf.connect(midPeak); midPeak.connect(airShelf);
-  // parallel drive: dry EQ'd signal → limiter, plus a driven copy blended in at P.drive amount
-  const preDrive=ac.createGain(); preDrive.gain.value=1.5;             // hit the shaper harder
+  wnode.out.connect(subHP); subHP.connect(loShelf); loShelf.connect(midPeak); midPeak.connect(airShelf);
+  const preDrive=ac.createGain(); preDrive.gain.value=1.5;
   driveShaper=ac.createWaveShaper(); driveShaper.curve=driveCurve(); driveShaper.oversample="4x";
   driveMix=ac.createGain(); driveMix.gain.value=P.drive;
-  airShelf.connect(limiter);                                            // dry path
+  airShelf.connect(limiter);
   airShelf.connect(preDrive); preDrive.connect(driveShaper); driveShaper.connect(driveMix); driveMix.connect(limiter);
   limiter.connect(ac.destination);
-  // recorder tap (post-limiter, fully processed)
   recDest=ac.createGain(); limiter.connect(recDest);
-  // ---- underground: sub + brown noise ----
-  subOsc=ac.createOscillator(); subOsc.type="sine"; subOsc.frequency.value=P.rootfreq/2;
+  // ---- underground: root + sub-octave + brown noise, all breathing ----
+  // The sub used to be a lone sine an octave BELOW the root — at the default
+  // 55 Hz root that is 27.5 Hz, which most systems cannot reproduce at all.
+  // It was silently consuming a large share of the energy budget and holding
+  // the whole spectrum down. Now the audible root carries the floor and the
+  // sub-octave sits underneath it as weight you feel rather than hear.
+  subOsc=ac.createOscillator(); subOsc.type="sine"; subOsc.frequency.value=P.rootfreq;
   subGain=ac.createGain(); subGain.gain.value=0;
   subOsc.connect(subGain); subGain.connect(underBus); subOsc.start();
+  subOct=ac.createOscillator(); subOct.type="sine"; subOct.frequency.value=P.rootfreq/2;
+  subOctGain=ac.createGain(); subOctGain.gain.value=0;
+  subOct.connect(subOctGain); subOctGain.connect(underBus); subOct.start();
+  const subW=makeWanderer(0.021,1.4,0.2);  // ±1.4¢ — just enough to live
+  subW.g.connect(subOsc.detune); subW.g.connect(subOct.detune);
+  // the floor swells and settles instead of holding one level forever
+  subBreath=makeWanderer(0.019,0.0,0.7); subBreath.g.connect(subGain.gain);
+  subOctBreath=makeWanderer(0.014,0.0,0.15); subOctBreath.g.connect(subOctGain.gain);
   noiseNode=makeBrownNoise();
   noiseLP=ac.createBiquadFilter(); noiseLP.type="lowpass"; noiseLP.frequency.value=180;
   noiseGain=ac.createGain(); noiseGain.gain.value=0;
   noiseNode.connect(noiseLP); noiseLP.connect(noiseGain); noiseGain.connect(underBus);
+  // gusts: the noise floor opens and closes like wind through leaves rather
+  // than sitting there as a constant hiss
+  breezeCut=makeWanderer(0.043,240,0.0); breezeCut.g.connect(noiseLP.frequency);
+  breezeGain=makeWanderer(0.037,0.0,0.45); breezeGain.g.connect(noiseGain.gain);
   $("ledaudio").classList.add("on");
 }
-function makeImpulse(dur,decay){
-  const rate=ac.sampleRate, len=rate*dur, buf=ac.createBuffer(2,len,rate);
-  for(let ch=0;ch<2;ch++){ const d=buf.getChannelData(ch);
-    for(let i=0;i<len;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay); } }
+/* Impulse response with frequency-dependent decay. A real space loses its
+   highs long before its lows (air absorption + soft surfaces); the old flat
+   white-noise IR decayed every band together, which is the "cheap digital
+   reverb" sound. Two poles of progressive damping + sparse early reflections. */
+function makeImpulse(dur,decay,damp){
+  damp=(damp==null?0.55:damp);
+  const rate=ac.sampleRate, len=Math.max(8,Math.floor(rate*dur)), buf=ac.createBuffer(2,len,rate);
+  const pre=Math.floor(rate*0.021);                       // pre-delay: pushes the source forward
+  for(let ch=0;ch<2;ch++){
+    const d=buf.getChannelData(ch); let lp=0, lp2=0;
+    for(let i=pre;i<len;i++){
+      const t=(i-pre)/(len-pre);
+      const env=Math.pow(1-t,decay);
+      const a=Math.max(0.02,0.62-0.58*Math.pow(t,0.34)*damp);
+      lp+=a*((Math.random()*2-1)-lp);
+      lp2+=0.5*(lp-lp2);                                  // 2nd pole → less fizz
+      d[i]=lp2*env;
+    }
+    for(let k=0;k<9;k++){                                 // decorrelated early reflections
+      const pos=pre+Math.floor(rate*(0.004+Math.random()*0.075));
+      if(pos<len) d[pos]+=(Math.random()*2-1)*0.5*Math.pow(0.72,k);
+    }
+  }
   return buf;
 }
 function makeBrownNoise(){
-  // 2 independent channels → decorrelated, wide atmospheric noise floor
   const len=ac.sampleRate*2, buf=ac.createBuffer(2,len,ac.sampleRate);
   for(let ch=0;ch<2;ch++){ const d=buf.getChannelData(ch); let last=0;
-    for(let i=0;i<len;i++){ const w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*3.2; } }
+    for(let i=0;i<len;i++){ const w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*1.35; } }
   const src=ac.createBufferSource(); src.buffer=buf; src.loop=true; src.start(); return src;
 }
 /* mid/side stereo width matrix: width 0=mono, 1=neutral, >1 wider */
@@ -596,20 +786,15 @@ function buildWidth(inputNode){
   const rSide=ac.createGain(); rSide.gain.value=-0.5;
   split.connect(lSide,0); split.connect(rSide,1);
   lSide.connect(side); rSide.connect(side);             // side = 0.5L - 0.5R
-  const w=ac.createGain(); w.gain.value=1;              // width amount
+  const w=ac.createGain(); w.gain.value=1;
   side.connect(w);
   const Lg=ac.createGain(), Rg=ac.createGain();
-  mid.connect(Lg); mid.connect(Rg);                     // L=mid(+side*w) R=mid(-side*w)
+  mid.connect(Lg); mid.connect(Rg);
   w.connect(Lg);
   const inv=ac.createGain(); inv.gain.value=-1; w.connect(inv); inv.connect(Rg);
   const merger=ac.createChannelMerger(2);
   Lg.connect(merger,0,0); Rg.connect(merger,0,1);
   return {out:merger, width:w.gain};
-}
-function bitcrushCurve(bits){
-  const n=1024, curve=new Float32Array(n), step=Math.pow(2,bits);
-  for(let i=0;i<n;i++){ const x=i/(n-1)*2-1; curve[i]=Math.round(x*step)/step; }
-  return curve;
 }
 /* smooth tanh soft-clip → musical saturation with even+odd harmonics */
 function driveCurve(){
@@ -617,96 +802,294 @@ function driveCurve(){
   for(let i=0;i<n;i++){ const x=i/(n-1)*2-1; curve[i]=Math.tanh(k*x); }
   return curve;
 }
+
+/* ------------------------------------------------------------
+   SPECIES — each is a genuinely different synthesis recipe now.
+   Previously half of these were an "osc:sine" with a different
+   bandpass Q, and a bandpass on a sine is very nearly a no-op,
+   so REED / BELL / GLASS / BREATH all sounded like the same voice.
+   noise = how much of the voice is resonated air rather than
+   oscillator; that ratio is most of what separates a reed from a
+   bell from a pane of glass.
+   ------------------------------------------------------------ */
 const SPEC={
-  fern:  {osc:"triangle",fm:true, q:6, tremDepth:0.5},
-  oak:   {osc:"sawtooth",fm:false,q:3, tremDepth:0.35},
-  reed:  {osc:"sine",    fm:false,q:9, tremDepth:0.6},
-  thorn: {osc:"square",  fm:false,q:2, tremDepth:0.7},
-  bell:  {osc:"sine",    fm:true, q:8, tremDepth:0.25},  // FM sine → metallic bell partials
-  bow:   {osc:"sawtooth",fm:false,q:5, tremDepth:0.45},  // narrow saw = bowed string
-  glass: {osc:"triangle",fm:false,q:11,tremDepth:0.3},   // very high-Q tri = glassy resonance
-  breath:{osc:"sine",    fm:false,q:1.5,tremDepth:0.8},  // very wide filter = airy hush
+  /*         osc        filt        q    bright  fmRatio fmIdx  noise nzQ  nzMult  bow   trem */
+  fern:  {osc:"triangle",filt:"bandpass",q:5.0, bright:1.00, fmRatio:1.50, fmIdx:0.42, noise:0.06, nzQ:2.6, nzMult:2.0, bow:0,   trem:0.40},
+  oak:   {osc:"sawtooth",filt:"lowpass", q:1.6, bright:0.62, fmRatio:0,    fmIdx:0,    noise:0.05, nzQ:1.4, nzMult:1.5, bow:0,   trem:0.28},
+  reed:  {osc:"sine",    filt:"bandpass",q:4.0, bright:1.00, fmRatio:3.00, fmIdx:0.10, noise:0.20, nzQ:7.0, nzMult:3.0, bow:0,   trem:0.48},
+  thorn: {osc:"square",  filt:"lowpass", q:2.4, bright:1.30, fmRatio:0,    fmIdx:0,    noise:0.04, nzQ:2.0, nzMult:2.0, bow:0,   trem:0.60},
+  bell:  {osc:"sine",    filt:"bandpass",q:6.0, bright:1.15, fmRatio:2.76, fmIdx:1.10, noise:0.03, nzQ:9.0, nzMult:5.4, bow:0,   trem:0.18},
+  bow:   {osc:"sawtooth",filt:"lowpass", q:3.0, bright:0.80, fmRatio:0,    fmIdx:0,    noise:0.24, nzQ:3.2, nzMult:2.4, bow:1,   trem:0.34},
+  glass: {osc:"triangle",filt:"bandpass",q:12.0,bright:1.55, fmRatio:0,    fmIdx:0,    noise:0.32, nzQ:20.0,nzMult:4.0, bow:0,   trem:0.24},
+  breath:{osc:"sine",    filt:"bandpass",q:1.4, bright:1.00, fmRatio:0,    fmIdx:0,    noise:0.88, nzQ:2.2, nzMult:1.8, bow:0,   trem:0.66},
 };
+
+/* keep the mix from collapsing as the canopy fills in */
+function updateHeadroom(){
+  if(!ac||!canopyBus)return;
+  S.headroom=1/Math.pow(Math.max(1,S.voicesActive)/8+1,0.42);
+  canopyBus.gain.setTargetAtTime(P.canopy*S.headroom,ac.currentTime,0.6);
+}
 
 /* create an audible voice for a node */
 function startVoice(node){
   if(!ac) return;
-  if(S.voicesActive>=S.voiceBudget) return; // budget: rest are visual-only
+  if(S.voicesActive>=S.voiceBudget) return;
+  // thin the deep canopy probabilistically rather than by iteration order, so a
+  // full budget loses an even scatter of leaves instead of one whole region
+  if(S.voicesActive>S.voiceBudget*0.75 && node.depth>=2 && hash01(node.pathId+"t")>0.58) return;
   const sp=SPEC[node.species]||SPEC.fern;
-  const t=ac.currentTime;
-  const freq=node.freq;
-  const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t);
-  const amp=0.15/(1+node.depth*0.18);   // gentler rolloff → canopy voices stay present
-  g.gain.exponentialRampToValueAtTime(Math.max(0.002,amp),t+1.2+node.depth*0.15);
-  const bp=ac.createBiquadFilter(); bp.type="bandpass";
-  bp.frequency.value=Math.min(10000,freq*(1+node.depth*0.5)); bp.Q.value=Math.max(1.1,sp.q-node.depth*0.6);
-  const bpBase=bp.frequency.value;
-  const bp2=ac.createBiquadFilter(); bp2.type="bandpass"; bp2.frequency.value=bpBase; bp2.Q.value=bp.Q.value;
-  // ---- twin oscillators panned apart with slight detune = chorused stereo width ----
-  const usePan=!!ac.createStereoPanner;
-  const px=(node.x1/220);
-  const basePan=Math.max(-0.9,Math.min(0.9,px*(0.5+node.depth*0.16)));
-  const spread=0.42;
-  let pan=null,pan2=null,panLfo=null;
-  if(usePan){
-    pan =ac.createStereoPanner(); pan.pan.value =Math.max(-1,Math.min(1,basePan-spread));
-    pan2=ac.createStereoPanner(); pan2.pan.value=Math.max(-1,Math.min(1,basePan+spread));
-    // independent slow auto-pan drift → both move together, image drifts through the field
-    panLfo=ac.createOscillator(); panLfo.type="sine";
-    panLfo.frequency.value=0.02+hash01(node.pathId+"p")*0.13;
-    const panDepth=ac.createGain(); panDepth.gain.value=Math.min(0.5,0.22+node.depth*0.05);
-    panLfo.connect(panDepth); panDepth.connect(pan.pan); panDepth.connect(pan2.pan); panLfo.start();
+  const h=k=>hash01(node.pathId+k);
+  const t0=ac.currentTime, freq=node.freq;
+  /* --- stochastic birth. A generation used to attack in one millisecond;
+     spreading it over a few seconds is the difference between a chord stab
+     and a canopy filling in. Deeper twigs arrive later, like light spreading. */
+  const stagger=h("s")*(0.5+P.articulate*3.4)*(0.3+node.depth*0.26);
+  const t=t0+stagger;
+  const amp=(0.15/(1+node.depth*0.18))*(0.72+h("v")*0.5);
+
+  /* --- amplitude envelope: humanised attack with a small overshoot that
+     settles back, the way a bowed or blown thing finds its level --- */
+  const g=ac.createGain();
+  const atk=(0.9+node.depth*0.14)*(0.55+h("a")*1.1)*(0.35+P.articulate*1.5);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.002,amp*(1+P.articulate*0.30)),t+atk);
+  g.gain.setTargetAtTime(Math.max(0.002,amp),t+atk,atk*0.8);
+
+  /* --- tone filters. Two, so the detuned halves are filtered independently
+     and the pair never phase-locks into a single "mono" object --- */
+  const bright=sp.bright, bpBase=Math.min(11000,freq*(1+node.depth*0.42)*bright);
+  const mkFilt=off=>{ const f=ac.createBiquadFilter(); f.type=sp.filt;
+    f.frequency.value=bpBase*off; f.Q.value=Math.max(0.7,sp.q-node.depth*0.4); return f; };
+  const fA=mkFilt(0.98), fB=mkFilt(1.03);
+
+  /* --- three oscillators. Two detuned twins for the classic beating, plus a
+     quiet third at an irrational offset so the beats never line up into one
+     periodic wobble (two detuned oscillators give you exactly one beat rate,
+     which the ear hears as a machine). --- */
+  const mults=[1,1,1], spread=[-0.5,0.5,0.207];
+  const mk=(i)=>{ const o=ac.createOscillator(); o.type=sp.osc; o.frequency.value=freq;
+    o.detune.value=node.cents+P.detune*spread[i]; return o; };
+  const o1=mk(0), o2=mk(1), o3=mk(2);
+  const o3g=ac.createGain(); o3g.gain.value=0.34;
+
+  /* --- resonated air. For BREATH/GLASS/BOW/REED this is most of the voice. --- */
+  const nz=pinkSource();
+  const nzFilt=ac.createBiquadFilter(); nzFilt.type="bandpass";
+  nzFilt.frequency.value=Math.min(12000,freq*sp.nzMult); nzFilt.Q.value=sp.nzQ;
+  const nzGain=ac.createGain();
+  const nzAmt=sp.noise*(0.7+h("n")*0.7);
+  nzGain.gain.value=nzAmt;
+  if(sp.bow){ // bow-scratch onset: the noise is loud for a moment, then settles
+    nzGain.gain.setValueAtTime(nzAmt*3.4,t);
+    nzGain.gain.setTargetAtTime(nzAmt,t+0.05,0.45);
   }
-  // main + detuned twin oscillators (symmetric detune around the true pitch)
-  const osc =ac.createOscillator(); osc.type =sp.osc; osc.frequency.value =freq; osc.detune.value =-P.detune/2;
-  const osc2=ac.createOscillator(); osc2.type=sp.osc; osc2.frequency.value=freq; osc2.detune.value=+P.detune/2;
-  let fm=null,fmg=null;
-  if(sp.fm){ fm=ac.createOscillator(); fm.frequency.value=freq*1.5; fmg=ac.createGain();
-    fmg.gain.value=freq*0.6; fm.connect(fmg); fmg.connect(osc.frequency); fmg.connect(osc2.frequency); fm.start(); }
-  // slow detune drift → the twin beats wander, shimmering over time
+  nz.connect(nzFilt); nzFilt.connect(nzGain);
+  nz.start(t,Math.random()*3.8);
+
+  /* --- FM for the metallic species (inharmonic ratio = bell, not organ) --- */
+  let fmOsc=null,fmGain=null;
+  if(sp.fmRatio){
+    fmOsc=ac.createOscillator(); fmOsc.frequency.value=freq*sp.fmRatio;
+    fmGain=ac.createGain(); fmGain.gain.value=freq*sp.fmIdx;
+    // the FM index breathes, so the timbre isn't frozen
+    const fw=makeWanderer(0.026+h("fw")*0.03,freq*sp.fmIdx*0.45,h("fo"));
+    fw.g.connect(fmGain.gain);
+    fmOsc.connect(fmGain); fmGain.connect(o1.frequency); fmGain.connect(o2.frequency); fmGain.connect(o3.frequency);
+    fmOsc.start(t);
+  }
+
+  /* --- micro-tuning wander: the WHOLE voice drifts a few cents, the way a
+     real instrument is never quite where it was a minute ago. This, more than
+     anything else here, is what stops a JI stack sounding like a tuning fork. */
+  const wanderW=makeWanderer(0.035+h("w")*0.05, P.wander, h("wo"));
+  wanderW.g.connect(o1.detune); wanderW.g.connect(o2.detune); wanderW.g.connect(o3.detune);
+  // independent slow beat-drift on the twin only → shimmer inside the voice
   const detLfo=ac.createOscillator(); detLfo.type="sine";
-  detLfo.frequency.value=0.015+hash01(node.pathId+"d")*0.05;
-  const detDepth=ac.createGain(); detDepth.gain.value=1.5+P.drift*7; // ± cents
-  detLfo.connect(detDepth); detDepth.connect(osc2.detune); detLfo.start();
-  // slow bandpass sweep → timbre opens & closes over tens of seconds
+  detLfo.frequency.value=0.015+h("d")*0.05;
+  const detDepth=ac.createGain(); detDepth.gain.value=1.5+P.drift*7;
+  detLfo.connect(detDepth); detDepth.connect(o2.detune); detLfo.start(t);
+
+  /* --- timbral drift: a slow sine plus a random walk, summed --- */
   const filtLfo=ac.createOscillator(); filtLfo.type="sine";
-  filtLfo.frequency.value=0.008+hash01(node.pathId+"f")*0.03;
+  filtLfo.frequency.value=0.008+h("f")*0.03;
   const filtDepth=ac.createGain(); filtDepth.gain.value=bpBase*(0.12+P.drift*0.45);
-  filtLfo.connect(filtDepth); filtDepth.connect(bp.frequency); filtDepth.connect(bp2.frequency); filtLfo.start();
-  // tremolo LFO => polyrhythm: rate tied to node ratio
+  filtLfo.connect(filtDepth); filtDepth.connect(fA.frequency); filtDepth.connect(fB.frequency); filtLfo.start(t);
+  const filtW=makeWanderer(0.019+h("fq")*0.04, bpBase*0.30, h("fp"));
+  filtW.g.connect(fA.frequency); filtW.g.connect(fB.frequency);
+
+  /* --- GUSTS. Every voice reads the same wander waveform at the same rate,
+     but starts at an offset derived from its x position — so one gust sweeps
+     bodily across the canopy from one side to the other. Ties the WIND
+     control to the sound, not just the drawing. --- */
+  const xn=Math.max(0,Math.min(1,(node.x1+260)/520));
+  const gustOff=(xn*0.34+0.05)%1;
+  const gustW=makeWanderer(0.055, amp*P.gust*0.85, gustOff);
+  gustW.g.connect(g.gain);
+  const gustB=makeWanderer(0.055, bpBase*P.gust*0.35, gustOff);
+  gustB.g.connect(fA.frequency); gustB.g.connect(fB.frequency);
+
+  /* --- tremolo: still rate-locked to the JI ratio for polyrhythm, but the
+     depth itself now wanders, so it never sits as a fixed periodic pulse --- */
   const lfo=ac.createOscillator(); lfo.type="sine";
-  const lfoRate = P.tempoSync ? (1000/P.cycleMs)*(node.ratioMul||1)
-                              : P.pulse*(node.ratioMul||1);
+  const lfoRate=P.tempoSync ? (1000/P.cycleMs)*(node.ratioMul||1) : P.pulse*(node.ratioMul||1);
   lfo.frequency.value=Math.max(0.05,lfoRate);
-  const lfoG=ac.createGain(); lfoG.gain.value=amp*sp.tremDepth;
-  lfo.connect(lfoG); lfoG.connect(g.gain); lfo.start();
-  // signal path (through a dedicated mute-gain used by Solo, untouched by the tremolo LFO)
+  const lfoG=ac.createGain(); lfoG.gain.value=amp*sp.trem*(0.35+P.articulate);
+  lfo.connect(lfoG); lfoG.connect(g.gain); lfo.start(t);
+  const tremW=makeWanderer(0.023+h("tw")*0.02, amp*sp.trem*0.4, h("tp"));
+  tremW.g.connect(lfoG.gain);
+  node.trem=Math.max(0.05,lfoRate); node.phase=h("ph")*6.283;
+
+  /* --- stereo: twins panned apart, image wandering (not sine-swept) --- */
+  const usePan=!!ac.createStereoPanner;
+  const basePan=Math.max(-0.9,Math.min(0.9,(node.x1/220)*(0.5+node.depth*0.16)));
+  const sp2=0.42;
+  let panA=null,panB=null,panW=null;
+  if(usePan){
+    panA=ac.createStereoPanner(); panA.pan.value=Math.max(-1,Math.min(1,basePan-sp2));
+    panB=ac.createStereoPanner(); panB.pan.value=Math.max(-1,Math.min(1,basePan+sp2));
+    panW=makeWanderer(0.02+h("p")*0.05, Math.min(0.45,0.20+node.depth*0.045), h("po"));
+    panW.g.connect(panA.pan); panW.g.connect(panB.pan);
+  }
+
+  /* --- wiring --- */
+  o1.connect(fA); o3.connect(o3g); o3g.connect(fA);
+  o2.connect(fB); nzGain.connect(fB);
+  fA.connect(panA||g); if(panA)panA.connect(g);
+  fB.connect(panB||g); if(panB)panB.connect(g);
   const mute=ac.createGain(); mute.gain.value=(S.soloed && !isInSolo(node))?0:1;
-  osc.connect(bp);   bp.connect(pan||g);   if(pan)pan.connect(g);
-  osc2.connect(bp2); bp2.connect(pan2||g); if(pan2)pan2.connect(g);
   g.connect(mute); mute.connect(canopyBus);
-  osc.start(); osc2.start();
-  node.voice={osc,osc2,fm,g,bp,bp2,lfo,lfoG,pan,pan2,panLfo,detLfo,filtLfo,detDepth,filtDepth,mute,amp,bpBase,started:t,crushed:false};
-  S.voicesActive++;
-  midiNoteOn(node);
+  /* --- per-voice reverb send: further out and further up = wetter and darker.
+     A single global canopy→reverb send gives you a flat wall; this gives depth. */
+  const sendLP=ac.createBiquadFilter(); sendLP.type="lowpass";
+  sendLP.frequency.value=Math.max(1200,9000-node.depth*950);
+  const send=ac.createGain();
+  send.gain.value=0.30+node.depth*0.13+Math.abs(basePan)*0.12;
+  mute.connect(sendLP); sendLP.connect(send); send.connect(revBus);
+
+  o1.start(t); o2.start(t); o3.start(t);
+  if(P.ticks>0.001) tickEvent(node,t);   // audible moment of being born
+
+  node.voice={oscs:[o1,o2,o3],mults,spread,o3g,fmOsc,fmGain,fmRatio:sp.fmRatio,fmIdx:sp.fmIdx,
+    g,filts:[fA,fB],nzFilt,nzGain,nzAmt,nzMult:sp.nzMult,nz,lfo,lfoG,tremW,
+    panA,panB,panW,detLfo,filtLfo,detDepth,filtDepth,filtW,gustW,gustB,wanderW,
+    mute,sendLP,send,amp,bpBase,bright,started:t,crushed:false,
+    srcs:[o1,o2,o3,fmOsc,lfo,detLfo,filtLfo,nz,
+          wanderW.src,filtW.src,gustW.src,gustB.src,tremW.src,panW&&panW.src]};
+  S.voicesActive++; S.voiced.add(node); syncDyn(node);
+  updateHeadroom();
+  if(stagger>0.02) setTimeout(()=>{ if(node.voice)midiNoteOn(node); },stagger*1000);
+  else midiNoteOn(node);
 }
-function decayVoice(node){ // digital-rot decay → fade to true silence, then free the slot
+
+/* --- transient layer -------------------------------------------------
+   A drone with no events in it is a texture, not music. These are all
+   very quiet: a woody tick as each branch is born, a brush of noise as a
+   voice dies, and occasional pitched drops from the canopy.            */
+function tickEvent(node,when){
+  if(!ac||!tickBus) return;
+  const t=(when||ac.currentTime)+0.001;
+  const lvl=P.ticks*0.14*(0.6+hash01(node.pathId+"k")*0.8)/(1+node.depth*0.2);
+  if(lvl<0.0008) return;
+  const n=pinkSource();
+  const f=ac.createBiquadFilter(); f.type="bandpass";
+  f.frequency.value=Math.min(9000,node.freq*(3+hash01(node.pathId+"kf")*4)); f.Q.value=6;
+  const g=ac.createGain();
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(lvl,t+0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.05+hash01(node.pathId+"kd")*0.09);
+  // a touch of pitched body so it reads as wood, not as a click
+  const o=ac.createOscillator(); o.type="triangle"; o.frequency.value=node.freq*2;
+  o.frequency.exponentialRampToValueAtTime(node.freq*1.4,t+0.06);
+  const og=ac.createGain();
+  og.gain.setValueAtTime(lvl*0.5,t); og.gain.exponentialRampToValueAtTime(0.0001,t+0.09);
+  const pan=ac.createStereoPanner?ac.createStereoPanner():null;
+  if(pan)pan.pan.value=Math.max(-1,Math.min(1,node.x1/240));
+  n.connect(f); f.connect(g); o.connect(og);
+  const dst=pan||tickBus; g.connect(dst); og.connect(dst); if(pan)pan.connect(tickBus);
+  n.start(t,Math.random()*3.8); o.start(t);
+  n.stop(t+0.3); o.stop(t+0.3);
+}
+/* a soft descending brush as a limb lets go */
+function fallEvent(node){
+  if(!ac||!tickBus||P.ticks<0.02) return;
+  const t=ac.currentTime, lvl=P.ticks*0.05;
+  const n=pinkSource();
+  const f=ac.createBiquadFilter(); f.type="bandpass"; f.Q.value=1.6;
+  f.frequency.setValueAtTime(Math.min(7000,node.freq*3.2),t);
+  f.frequency.exponentialRampToValueAtTime(Math.max(120,node.freq*0.7),t+1.6);
+  const g=ac.createGain();
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(lvl,t+0.25);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+1.7);
+  const pan=ac.createStereoPanner?ac.createStereoPanner():null;
+  n.connect(f); f.connect(g);
+  if(pan){ pan.pan.value=Math.max(-1,Math.min(1,node.x1/240)); g.connect(pan); pan.connect(tickBus); }
+  else g.connect(tickBus);
+  n.start(t,Math.random()*3.8); n.stop(t+2);
+}
+/* sparse pitched drops from the canopy — foreground interest over the bed */
+function bloomEvent(){
+  if(!ac||!tickBus) return;
+  const live=[]; for(const n of S.nodes.values()) if(n.voice&&!n.decaying) live.push(n);
+  if(!live.length) return;
+  const node=live[Math.floor(Math.random()*live.length)];
+  const t=ac.currentTime, lvl=P.bloom*0.13;
+  const f0=node.freq*(Math.random()<0.4?2:1);
+  const o=ac.createOscillator(); o.type="sine"; o.frequency.value=f0;
+  const o2=ac.createOscillator(); o2.type="sine"; o2.frequency.value=f0*2.76; // inharmonic partial
+  const g=ac.createGain(), g2=ac.createGain();
+  const dur=1.6+Math.random()*2.6;
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(lvl,t+0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  g2.gain.setValueAtTime(0.0001,t);
+  g2.gain.exponentialRampToValueAtTime(lvl*0.32,t+0.006);
+  g2.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.45);
+  const pan=ac.createStereoPanner?ac.createStereoPanner():null;
+  o.connect(g); o2.connect(g2);
+  if(pan){ pan.pan.value=Math.max(-1,Math.min(1,node.x1/220)); g.connect(pan); g2.connect(pan); pan.connect(tickBus); }
+  else { g.connect(tickBus); g2.connect(tickBus); }
+  o.start(t); o2.start(t); o.stop(t+dur+0.1); o2.stop(t+dur+0.1);
+}
+
+/* senescence. The old version spliced in a 3-bit bitcrusher — a striking
+   idea, but a leaf does not bit-crush. A dying acoustic source loses its
+   highs, sags slightly flat, dries out into noise, and fades unevenly. */
+function decayVoice(node){
   const v=node.voice; if(!v||v.crushed)return; v.crushed=true;
-  const t=ac.currentTime;
-  const shaper=ac.createWaveShaper(); shaper.curve=bitcrushCurve(3);
-  // insert bitcrusher on the summed voice output: g -> shaper -> mute
-  try{ v.g.disconnect(); }catch(e){}
-  v.g.connect(shaper); shaper.connect(v.mute);
-  v.lfoG.gain.setTargetAtTime(0.0001,t,3);   // remove tremolo so it can reach real silence
-  v.bp.frequency.exponentialRampToValueAtTime(Math.max(80,v.bp.frequency.value*0.2),t+8);
-  if(v.bp2)v.bp2.frequency.exponentialRampToValueAtTime(Math.max(80,v.bp2.frequency.value*0.2),t+8);
-  v.g.gain.setTargetAtTime(0.0001,t+4,4);
-  // stop every source after the tail, then release the voice (guarded against double-free)
-  const endT=t+16;
-  [v.osc,v.osc2,v.fm,v.lfo,v.panLfo,v.detLfo,v.filtLfo].forEach(o=>{ if(o){try{o.stop(endT);}catch(e){}} });
+  const t=ac.currentTime, h=k=>hash01(node.pathId+k);
+  const T=13+h("z")*7;
+  v.filts.forEach(f=>{ try{
+    f.frequency.cancelScheduledValues(t);
+    f.frequency.setValueAtTime(Math.max(80,f.frequency.value),t);
+    f.frequency.exponentialRampToValueAtTime(Math.max(70,v.bpBase*0.14),t+T*0.8);
+  }catch(e){} });
+  v.oscs.forEach(o=>{ if(!o)return; try{
+    const d=o.detune.value;
+    o.detune.setValueAtTime(d,t);
+    o.detune.linearRampToValueAtTime(d-32-h("y")*34,t+T);   // sags flat as it dries
+  }catch(e){} });
+  if(v.nzGain) v.nzGain.gain.setTargetAtTime(v.nzAmt*2.8+0.03,t,T*0.30);  // → air
+  if(v.filtW)  v.filtW.g.gain.setTargetAtTime(0.0001,t,T*0.3);
+  if(v.gustB)  v.gustB.g.gain.setTargetAtTime(0.0001,t,T*0.3);
+  v.lfoG.gain.setTargetAtTime(0.0001,t,T*0.20);            // let it reach real silence
+  if(v.tremW) v.tremW.g.gain.setTargetAtTime(0.0001,t,T*0.2);
+  if(v.gustW) v.gustW.g.gain.setTargetAtTime(v.amp*P.gust*1.5,t,T*0.3); // wind takes it
+  if(v.sendLP) v.sendLP.frequency.setTargetAtTime(700,t,T*0.4);
+  if(v.send) v.send.gain.setTargetAtTime(Math.min(1.1,v.send.gain.value*1.7),t,T*0.4);
+  v.g.gain.cancelScheduledValues(t);
+  v.g.gain.setValueAtTime(Math.max(0.0002,v.amp),t);
+  v.g.gain.setTargetAtTime(0.00008,t+T*0.16,T*0.30);
+  fallEvent(node);
+  const endT=t+T+3;
+  v.srcs.forEach(o=>{ if(o){try{o.stop(endT);}catch(e){}} });
   midiNoteOff(node);
-  setTimeout(()=>{ if(node.voice===v){ node.voice=null; S.voicesActive=Math.max(0,S.voicesActive-1); } },
-             (endT-t)*1000+250);
+  setTimeout(()=>{ if(node.voice===v){ node.voice=null; S.voiced.delete(node);
+    S.voicesActive=Math.max(0,S.voicesActive-1); updateHeadroom(); } },(endT-t)*1000+250);
+  // a dying limb keeps its own element until the tail is gone, then folds back in
+  setTimeout(()=>{ if(S.nodes.has(node.pathId)&&!node.voice) syncDyn(node); },(endT-t)*1000+400);
 }
 function stopVoice(node,fast){
   const v=node.voice; if(!v)return; const t=ac.currentTime;
@@ -714,38 +1097,59 @@ function stopVoice(node,fast){
   v.g.gain.setValueAtTime(Math.max(0.0002,v.g.gain.value),t);
   v.g.gain.exponentialRampToValueAtTime(0.0001,t+(fast?0.25:1.4));
   const stopT=t+(fast?0.4:1.8);
-  try{v.osc.stop(stopT);}catch(e){} try{if(v.osc2)v.osc2.stop(stopT);}catch(e){} try{if(v.fm)v.fm.stop(stopT);}catch(e){}
-  try{v.lfo.stop(stopT);}catch(e){} try{if(v.panLfo)v.panLfo.stop(stopT);}catch(e){}
-  try{if(v.detLfo)v.detLfo.stop(stopT);}catch(e){} try{if(v.filtLfo)v.filtLfo.stop(stopT);}catch(e){}
+  v.srcs.forEach(o=>{ if(o){try{o.stop(stopT);}catch(e){}} });
   midiNoteOff(node);
-  node.voice=null; S.voicesActive=Math.max(0,S.voicesActive-1);
+  node.voice=null; S.voiced.delete(node); S.voicesActive=Math.max(0,S.voicesActive-1); updateHeadroom();
+  if(S.nodes.has(node.pathId)) syncDyn(node);
 }
 function updateUnder(){
   if(!ac)return; const t=ac.currentTime;
   const depthReach=S.maxDepth||0;
   const density=Math.min(1,S.nodes.size/500);
-  subGain.gain.setTargetAtTime((0.10+depthReach*0.05)*Math.min(1,0.3+density),t,0.6);
-  noiseGain.gain.setTargetAtTime(P.noise*density,t,0.8);
-  noiseLP.frequency.setTargetAtTime(120+depthReach*35,t,1);
+  // The underground is a floor, not a layer. It used to measure LOUDER than the
+  // whole canopy and sat there at a near-constant level, which buried every
+  // detail above it and dragged the spectrum into a rumble.
+  // A floor should sit UNDER the tree, not next to it. Tuned so the underground
+  // measures roughly a third of the canopy's level, and so most of it is moving
+  // air rather than steady tone — a forest floor is rustle first, hum second.
+  const sub=(0.032+depthReach*0.012)*Math.min(1,0.3+density);
+  subGain.gain.setTargetAtTime(sub,t,0.6);
+  subOctGain.gain.setTargetAtTime(sub*0.55,t,0.6);
+  if(subBreath)    subBreath.g.gain.setTargetAtTime(sub*0.60,t,1);
+  if(subOctBreath) subOctBreath.g.gain.setTargetAtTime(sub*0.40,t,1);
+  const nf=P.noise*density*0.62;
+  noiseGain.gain.setTargetAtTime(nf,t,0.8);
+  noiseLP.frequency.setTargetAtTime(130+depthReach*40,t,1);
+  // ...and it gusts around its own level rather than holding still: the breeze
+  // swings it by more than half, which is what makes it read as air not hiss
+  if(breezeGain) breezeGain.g.gain.setTargetAtTime(nf*(0.62+P.wind*0.045),t,1);
+  if(breezeCut)  breezeCut.g.gain.setTargetAtTime(150+P.wind*55,t,1);
 }
-/* live-retune every branch. glide = time-constant (short for slider, long for harmony drift).
-   effective root = base root × current progression ratio (grafted nodes keep their blend). */
+/* re-point one voice at a new fundamental (used by retune + graft) */
+function setVoiceFreq(n,freq,tau){
+  const v=n.voice; if(!v||!ac)return; const t=ac.currentTime;
+  v.oscs.forEach(o=>{ if(o)o.frequency.setTargetAtTime(freq,t,tau); });
+  const bpf=Math.min(11000,freq*(1+n.depth*0.42)*(v.bright||1));
+  v.filts.forEach(f=>f.frequency.setTargetAtTime(bpf,t,tau));
+  v.bpBase=bpf;
+  if(v.nzFilt)   v.nzFilt.frequency.setTargetAtTime(Math.min(12000,freq*(v.nzMult||2)),t,tau);
+  if(v.filtDepth)v.filtDepth.gain.setTargetAtTime(bpf*(0.12+P.drift*0.45),t,tau);
+  if(v.filtW)    v.filtW.g.gain.setTargetAtTime(bpf*0.30,t,tau);
+  if(v.gustB)    v.gustB.g.gain.setTargetAtTime(bpf*P.gust*0.35,t,tau);
+  if(v.fmOsc)    v.fmOsc.frequency.setTargetAtTime(freq*v.fmRatio,t,tau);
+  if(v.fmGain)   v.fmGain.gain.setTargetAtTime(freq*v.fmIdx,t,tau);
+}
+/* live-retune every branch. glide = time-constant (short for slider, long for
+   harmony drift). effective root = base root × progression ratio. */
 function retuneAll(glide){
   if(!ac)return; const t=ac.currentTime, tau=glide||0.12;
   const eff=P.rootfreq*(S.progRatio||1);
-  if(subOsc)subOsc.frequency.setTargetAtTime(eff/2,t,tau);
+  if(subOsc)subOsc.frequency.setTargetAtTime(eff,t,tau);
+  if(subOct)subOct.frequency.setTargetAtTime(eff/2,t,tau);
   for(const n of S.nodes.values()){
     if(n.grafted) continue;
     n.freq=foldFreq(eff*n.ratioMul, n.depth);
-    const v=n.voice; if(!v)continue;
-    v.osc.frequency.setTargetAtTime(n.freq,t,tau);
-    if(v.osc2)v.osc2.frequency.setTargetAtTime(n.freq,t,tau);
-    const bpf=Math.min(10000,n.freq*(1+n.depth*0.5));
-    v.bp.frequency.setTargetAtTime(bpf,t,tau);
-    if(v.bp2)v.bp2.frequency.setTargetAtTime(bpf,t,tau);
-    v.bpBase=bpf;
-    if(v.filtDepth)v.filtDepth.gain.setTargetAtTime(bpf*(0.12+P.drift*0.45),t,tau);
-    if(v.fm) v.fm.frequency.setTargetAtTime(n.freq*1.5,t,tau);
+    if(n.voice) setVoiceFreq(n,n.freq,tau);
   }
 }
 
@@ -757,85 +1161,328 @@ function grow(){
   S.targetGen++;
   render();
 }
+/* ---- depth bands ---------------------------------------------------
+   Segments live in six NESTED groups, one per depth band. Nesting means a
+   band's sway transform compounds onto everything above it, so the trunk
+   barely moves and the twigs travel — and because each band contributes only
+   its own small delta, the joints between bands stay sub-pixel rather than
+   visibly tearing apart.
+
+   STATIC vs DYNAMIC: a mature canopy is ~6000 segments, and 6000 SVG elements
+   under a per-frame transform is a slideshow (measured: 4 fps). So the bulk of
+   the tree is merged into a handful of <path>s — one per band per colour/width
+   bucket — and only branches that need their OWN styling (sounding, selected,
+   hovered, pruned, dying, or still unfurling) get an individual <line>. That
+   is a few dozen elements instead of several thousand.
+   ------------------------------------------------------------------- */
+let BANDS=[], BANDC=[], BANDPATH=[], bandsDirty=false;
+const COLB=12, COL_LO=[0x3a,0x6f,0x4f], COL_HI=[0xa8,0xff,0xc6];
+const LEAF_COL="#57f08a";   // literal, not var(--leaf): CSS vars do not resolve in an exported .svg
+function clearTree(){
+  BANDS=[]; BANDC=[]; BANDPATH=[]; bandsDirty=false;
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+}
+function bandGroup(d){
+  const i=Math.max(0,Math.min(5,d|0));
+  for(let k=0;k<=i;k++){
+    if(!BANDS[k]){
+      const g=document.createElementNS(SVGNS,"g");
+      g.setAttribute("class","band");
+      g.style.willChange="transform";        // let the compositor own the sway
+      (k===0?svg:BANDS[k-1]).appendChild(g);
+      BANDS[k]=g; BANDPATH[k]=new Map();
+    }
+  }
+  return BANDS[i];
+}
+/* does this branch need to be drawn as its own element? */
+function isDyn(n){
+  return !!(n.voice||n.selected||n.hovered||n.decaying||n.fresh||S.pruned.has(n.pathId));
+}
+function ensureDyn(n){
+  if(n.el) return n.el;
+  const ln=document.createElementNS(SVGNS,"line");
+  ln.setAttribute("class","seg");
+  ln.setAttribute("x1",n.x0);ln.setAttribute("y1",n.y0);
+  ln.setAttribute("x2",n.x1);ln.setAttribute("y2",n.y1);
+  ln.setAttribute("stroke",n.col);
+  ln.setAttribute("stroke-width",n.baseW);
+  ln.setAttribute("stroke-linecap","round");
+  ln.setAttribute("vector-effect","non-scaling-stroke");
+  ln.style.pointerEvents="none";
+  bandGroup(n.depth).appendChild(ln);
+  n.el=ln; bandsDirty=true;
+  if(n.leafW) ensureLeaf(n);
+  return ln;
+}
+function ensureLeaf(n){
+  if(n.leaf||!n.leafW) return;
+  const c=document.createElementNS(SVGNS,"line");     // round-capped dot
+  c.setAttribute("x1",n.x1);c.setAttribute("y1",n.y1);
+  c.setAttribute("x2",n.x1+0.01);c.setAttribute("y2",n.y1);
+  c.setAttribute("stroke",LEAF_COL);
+  c.setAttribute("stroke-width",n.leafW);
+  c.setAttribute("stroke-linecap","round");
+  c.setAttribute("vector-effect","non-scaling-stroke");
+  c.setAttribute("opacity","0.9");
+  c.style.pointerEvents="none";
+  bandGroup(n.depth).appendChild(c); n.leaf=c;
+}
+function releaseDyn(n){
+  if(n.el){ n.el.remove(); n.el=null; bandsDirty=true; }
+  if(n.leaf){ n.leaf.remove(); n.leaf=null; }
+}
+function syncDyn(n){ if(isDyn(n)) ensureDyn(n); else releaseDyn(n); }
+
+/* fold every static branch into one path per band per colour/width bucket */
+function rebuildBands(){
+  bandsDirty=false;
+  const acc=[];
+  for(const n of S.nodes.values()){
+    if(n.el||S.pruned.has(n.pathId)) continue;        // drawn individually
+    const k=Math.max(0,Math.min(5,n.depth|0));
+    const a=acc[k]||(acc[k]={});
+    const bk="b"+n.hueB+"_"+n.wB;
+    (a[bk]||(a[bk]={kind:"b",col:n.col,w:n.wB,d:[]})).d
+      .push("M"+n.x0.toFixed(1)+" "+n.y0.toFixed(1)+"L"+n.x1.toFixed(1)+" "+n.y1.toFixed(1));
+    if(n.leafW){
+      const lk="l"+n.leafW;
+      (a[lk]||(a[lk]={kind:"l",col:LEAF_COL,w:n.leafW,d:[]})).d
+        .push("M"+n.x1.toFixed(1)+" "+n.y1.toFixed(1)+"l0.01 0");
+    }
+  }
+  for(let k=0;k<BANDS.length;k++){
+    const g=BANDS[k]; if(!g)continue;
+    const want=acc[k]||{}, have=BANDPATH[k]||(BANDPATH[k]=new Map());
+    for(const [key,el] of have) if(!want[key]){ el.remove(); have.delete(key); }
+    for(const key in want){
+      const spec=want[key];
+      let el=have.get(key);
+      if(!el){
+        el=document.createElementNS(SVGNS,"path");
+        el.setAttribute("fill","none");
+        el.setAttribute("stroke",spec.col);
+        el.setAttribute("stroke-width",spec.w);
+        el.setAttribute("stroke-linecap","round");
+        el.setAttribute("vector-effect","non-scaling-stroke");
+        if(spec.kind==="l") el.setAttribute("opacity","0.9");
+        el.style.pointerEvents="none";
+        g.insertBefore(el,g.firstChild);      // merged bulk sits behind the live branches
+        have.set(key,el);
+      }
+      el.setAttribute("d",spec.d.join(""));
+    }
+  }
+}
+/* pivot each band at its own centroid so its rotation is a local bend */
+function updateBandPivots(){
+  const acc=[];
+  for(const n of S.nodes.values()){
+    const i=Math.max(0,Math.min(5,n.depth|0));
+    const a=acc[i]||(acc[i]={x:0,y:0,c:0});
+    a.x+=n.x0; a.y+=n.y0; a.c++;
+  }
+  BANDC=acc.map(a=>a&&a.c?{x:a.x/a.c,y:a.y/a.c}:{x:0,y:0});
+}
+function updateSway(now){
+  if(!BANDS.length) return;
+  const ts=now/1000;
+  // scales off WIND, so that one control now moves the geometry, the sway, the
+  // audible gusts and the noise floor together — still air really is still
+  const amp=S.sway?Math.min(0.80,0.06+P.wind*0.055):0;
+  for(let k=0;k<BANDS.length;k++){
+    const g=BANDS[k]; if(!g)continue;
+    const c=BANDC[k]||{x:0,y:0}, ph=k*0.9;
+    // two incommensurate periods → the sway never repeats on a countable beat
+    const a=amp*(0.16+k*0.13)*(Math.sin(ts*0.21+ph)*0.62+Math.sin(ts*0.0772+ph*1.7)*0.38);
+    g.setAttribute("transform","rotate("+a.toFixed(4)+" "+c.x.toFixed(1)+" "+c.y.toFixed(1)+")");
+  }
+}
+/* a branch brightens as its own voice swells — the picture reports the mix */
+function updateShimmer(now){
+  const ts=now/1000;
+  // only the sounding branches are scanned: a mature canopy is thousands of
+  // segments but at most a few dozen of them have a voice
+  for(const n of S.voiced){
+    if(!n.el||!n.voice||S.pruned.has(n.pathId))continue;
+    const a=0.60+0.40*(0.5+0.5*Math.sin(ts*(n.trem||0.3)*6.283+(n.phase||0)));
+    n.el.style.opacity=a.toFixed(2);
+    if(n.leaf) n.leaf.setAttribute("opacity",(0.30+0.65*a).toFixed(2));
+  }
+}
+/* freshly-unfurled branches settle into the merged paths once they finish */
+function sweepFresh(now){
+  if(!S.fresh.length) return;
+  let w=0;
+  for(let i=0;i<S.fresh.length;i++){
+    const n=S.fresh[i];
+    if(!S.nodes.has(n.pathId)) continue;
+    if(now>=n.freshUntil){ n.fresh=false; if(n.el)n.el.style.transition=""; syncDyn(n); }
+    else S.fresh[w++]=n;
+  }
+  S.fresh.length=w;
+}
+
 function render(){
   const segs=interpret(derive(S.targetGen));
-  // fit transform: compute bounds
   let minx=0,maxx=0,miny=0,maxy=0;
   for(const s of segs){ minx=Math.min(minx,s.x0,s.x1);maxx=Math.max(maxx,s.x0,s.x1);
     miny=Math.min(miny,s.y0,s.y1);maxy=Math.max(maxy,s.y0,s.y1); }
   const pad=30, bw=Math.max(1,maxx-minx), bh=Math.max(1,maxy-miny);
-  svg.setAttribute("viewBox",`${minx-pad} ${miny-pad} ${bw+pad*2} ${bh+pad*2}`);
+  svg.setAttribute("viewBox",(minx-pad)+" "+(miny-pad)+" "+(bw+pad*2)+" "+(bh+pad*2));
+  // Reconcile against the current derivation. render() used only to ADD, so any
+  // branch that stopped existing — because a rule changed, or because the
+  // segment cap truncated the traversal partway through the string — kept its
+  // element at its old coordinates and kept its voice at a stale tuning. That
+  // is what left sprigs hanging unattached in the air above the canopy.
+  const live=new Set(); for(const s of segs) live.add(s.pathId);
+  for(const [pid,n] of [...S.nodes]){
+    if(live.has(pid)) continue;
+    if(n.voice) stopVoice(n,false);        // let it fade rather than click out
+    releaseDyn(n); S.voiced.delete(n); S.nodes.delete(pid); bandsDirty=true;
+  }
+  // Only a bounded number of new branches get the unfurl animation; past that
+  // they arrive already settled. A generation can add several thousand at once,
+  // and animating all of them is what the frame budget cannot afford.
+  let anim=900;
   for(const s of segs){
     if(S.pruned.has(s.pathId)) continue; // stays snipped
     let node=S.nodes.get(s.pathId);
     if(!node){
-      // NEW branch this generation → born
       node=makeNode(s);
       S.nodes.set(s.pathId,node);
-      drawSeg(node);
+      drawSeg(node, anim-->0);
       startVoice(node);
-    }
+    } else updateSeg(node,s);
   }
-  // graft lines refresh
   drawGrafts();
+  updateBandPivots();
+  rebuildBands();
   S.gen=S.targetGen;
   updateUnder();
   updateStatus();
+}
+/* an existing branch, re-derived: move it and glide its voice to the new
+   tuning rather than leaving it stranded on last generation's geometry */
+function updateSeg(node,s){
+  const moved=node.x0!==s.x0||node.y0!==s.y0||node.x1!==s.x1||node.y1!==s.y1;
+  const retuned=node.ratio!==s.ratio;
+  node.turn=s.turn; node.label=s.label; node.cents=s.cents; node.parent=s.parent;
+  if(node.depth!==s.depth){ node.depth=s.depth; bandsDirty=true;
+    const G=bandGroup(s.depth);
+    if(node.el)G.appendChild(node.el); if(node.leaf)G.appendChild(node.leaf);
+  }
+  if(s.depth>S.maxDepth) S.maxDepth=s.depth;
+  if(moved){
+    node.x0=s.x0;node.y0=s.y0;node.x1=s.x1;node.y1=s.y1; bandsDirty=true;
+    if(node.el){
+      node.el.setAttribute("x1",s.x0);node.el.setAttribute("y1",s.y0);
+      node.el.setAttribute("x2",s.x1);node.el.setAttribute("y2",s.y1);
+    }
+    if(node.leaf){ node.leaf.setAttribute("x1",s.x1);node.leaf.setAttribute("y1",s.y1);
+      node.leaf.setAttribute("x2",s.x1+0.01);node.leaf.setAttribute("y2",s.y1); }
+  }
+  if(retuned && !node.grafted){
+    node.ratio=s.ratio; node.ratioMul=s.ratio;
+    node.freq=foldFreq(P.rootfreq*(S.progRatio||1)*s.ratio, s.depth);
+    // long glide: the chord EVOLVES as the tree grows instead of jumping
+    if(node.voice) setVoiceFreq(node,node.freq,2.4);
+  }
 }
 function makeNode(s){
   const freq=foldFreq(P.rootfreq*(S.progRatio||1)*s.ratio, s.depth);
   if(s.depth>S.maxDepth) S.maxDepth=s.depth;
   return {...s, species:P.species, freq, ratioMul:s.ratio, muted:false,
-    decaying:false, age:0, voice:null, el:null};
+    cents:s.cents||0, trem:0.3, phase:hash01(s.pathId+"ph")*6.283,
+    decaying:false, age:0, voice:null, el:null, leaf:null};
 }
-function drawSeg(node){
-  const w=Math.max(0.6,3.4*Math.pow(0.78,node.depth));
-  const hue=Math.min(1,node.depth/6);
-  const col=lerpCol([0x3a,0x6f,0x4f],[0x9f,0xff,0xc0],hue);
-  // --- visible line (non-interactive; hit handled by fat overlay) ---
-  const ln=document.createElementNS(SVGNS,"line");
-  ln.setAttribute("class","seg");
-  ln.setAttribute("x1",node.x0);ln.setAttribute("y1",node.y0);
-  ln.setAttribute("x2",node.x1);ln.setAttribute("y2",node.y1);
-  ln.setAttribute("stroke-width",w);
-  ln.setAttribute("stroke",col);
-  ln.style.pointerEvents="none";
-  ln.dataset.baseCol=col;
-  const len=Math.hypot(node.x1-node.x0,node.y1-node.y0);
-  ln.setAttribute("stroke-dasharray",len);
-  ln.setAttribute("stroke-dashoffset",len);
-  ln.style.transition="stroke-dashoffset .6s ease-out, stroke .18s, stroke-width .18s";
-  ln.dataset.pid=node.pathId;
-  svg.appendChild(ln);
-  requestAnimationFrame(()=>ln.setAttribute("stroke-dashoffset",0));
-  node.el=ln; node.baseW=w;
-  // --- fat invisible hit target: generous, easy to click on any branch ---
-  const hit=document.createElementNS(SVGNS,"line");
-  hit.setAttribute("x1",node.x0);hit.setAttribute("y1",node.y0);
-  hit.setAttribute("x2",node.x1);hit.setAttribute("y2",node.y1);
-  hit.setAttribute("stroke","transparent");
-  hit.setAttribute("stroke-width",Math.max(11,w+9));
-  hit.setAttribute("stroke-linecap","round");
-  hit.style.pointerEvents="stroke"; hit.style.cursor="pointer";
-  hit.addEventListener("click",e=>{e.stopPropagation();onSegClick(node);});
-  hit.addEventListener("dblclick",e=>{e.stopPropagation();toggleSolo(node);});
-  hit.addEventListener("mouseenter",()=>{ hover(node);
-    if(!S.pruned.has(node.pathId)){ ln.setAttribute("stroke","var(--sel)"); ln.setAttribute("stroke-width",w+0.8);} });
-  hit.addEventListener("mouseleave",()=>{ $("hud").dataset.hover="";
-    if(node.el&&!node.selected&&!S.pruned.has(node.pathId)){
-    ln.setAttribute("stroke",ln.dataset.baseCol); ln.setAttribute("stroke-width",node.baseW);} });
-  svg.appendChild(hit);
-  node.hit=hit;
-  // leaf dot for terminal-ish thin branches
+function drawSeg(node, animate){
+  // widths are in SCREEN pixels (non-scaling stroke), so a twig stays a twig
+  // whether the tree is three segments tall or three thousand
+  const w=Math.max(0.75,3.2*Math.pow(0.80,node.depth));
+  // real foliage is not one flat green: jitter each branch's place on the ramp
+  const hue=Math.max(0,Math.min(1,node.depth/6+(hash01(node.pathId+"h")*2-1)*0.13));
+  node.hueB=Math.round(hue*(COLB-1));
+  node.col=lerpCol(COL_LO,COL_HI,node.hueB/(COLB-1));
+  node.baseW=w; node.wB=Math.round(w*4)/4;
   if(node.depth>=P.maxgen-1){
-    const c=document.createElementNS(SVGNS,"circle");
-    c.setAttribute("cx",node.x1);c.setAttribute("cy",node.y1);
-    c.setAttribute("r",Math.max(1,w*0.9));c.setAttribute("fill","var(--leaf)");
-    c.setAttribute("opacity","0.9"); c.style.pointerEvents="none"; svg.appendChild(c); node.leaf=c;
+    // leaves vary in size the way leaves do
+    node.leafW=Math.round(Math.max(1,w*0.9)*(0.7+hash01(node.pathId+"lr")*0.9)*4)/2;
+  }
+  if(animate){
+    // the segment unfurls on the SAME hashed delay its voice uses to fade in,
+    // so what you watch arriving and what you hear arriving are one event
+    const delay=hash01(node.pathId+"s")*(0.5+P.articulate*3.4)*(0.3+node.depth*0.26);
+    const dur=0.55+node.depth*0.12;
+    node.fresh=true; node.freshUntil=performance.now()+(delay+dur)*1000+120;
+    S.fresh.push(node);
+    const ln=ensureDyn(node);
+    const len=Math.hypot(node.x1-node.x0,node.y1-node.y0);
+    ln.setAttribute("stroke-dasharray",len);
+    ln.setAttribute("stroke-dashoffset",len);
+    ln.style.transition="stroke-dashoffset "+dur.toFixed(2)+"s cubic-bezier(.16,.8,.3,1) "+delay.toFixed(2)+"s";
+    requestAnimationFrame(()=>ln.setAttribute("stroke-dashoffset",0));
+    if(node.leaf){ node.leaf.setAttribute("opacity","0");
+      node.leaf.style.transition="opacity .9s ease-out "+(delay+0.35).toFixed(2)+"s";
+      requestAnimationFrame(()=>node.leaf&&node.leaf.setAttribute("opacity","0.9")); }
+  } else {
+    bandsDirty=true;                       // straight into the merged paths
   }
 }
 function lerpCol(a,b,t){ const r=Math.round(a[0]+(b[0]-a[0])*t),g=Math.round(a[1]+(b[1]-a[1])*t),
   bl=Math.round(a[2]+(b[2]-a[2])*t); return `rgb(${r},${g},${bl})`; }
+
+/* ---- pointer hit-testing -------------------------------------------
+   There used to be a second, fat, invisible <line> per segment purely as a
+   click target — 6000 extra elements to hit-test six of them. Nearest-segment
+   in script is both cheaper and kinder: you no longer have to land exactly on
+   a one-pixel twig. Coordinates go through each band's live CTM so the sway
+   offset is accounted for.                                             */
+function distToSeg2(px,py,ax,ay,bx,by){
+  const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy;
+  let t=l2?((px-ax)*dx+(py-ay)*dy)/l2:0;
+  t=t<0?0:t>1?1:t;
+  const qx=ax+t*dx-px, qy=ay+t*dy-py;
+  return qx*qx+qy*qy;
+}
+function pickNode(clientX,clientY){
+  if(!S.nodes.size) return null;
+  const ctms=[];
+  for(let k=0;k<BANDS.length;k++) ctms[k]=BANDS[k]?BANDS[k].getScreenCTM():null;
+  let best=null,bd=15*15;
+  for(const n of S.nodes.values()){
+    if(S.pruned.has(n.pathId)) continue;
+    const m=ctms[Math.max(0,Math.min(5,n.depth|0))]; if(!m)continue;
+    const ax=m.a*n.x0+m.c*n.y0+m.e, ay=m.b*n.x0+m.d*n.y0+m.f;
+    const bx=m.a*n.x1+m.c*n.y1+m.e, by=m.b*n.x1+m.d*n.y1+m.f;
+    const d=distToSeg2(clientX,clientY,ax,ay,bx,by);
+    if(d<bd){bd=d;best=n;}
+  }
+  return best;
+}
+function setHover(node){
+  const prev=S.hover;
+  if(prev===node) return;
+  if(prev){ prev.hovered=false;
+    if(prev.el&&!prev.selected&&!S.pruned.has(prev.pathId)){
+      prev.el.setAttribute("stroke",prev.col); prev.el.setAttribute("stroke-width",prev.baseW); }
+    syncDyn(prev); }
+  S.hover=node;
+  $("hud").dataset.hover="";
+  if(node){
+    node.hovered=true; ensureDyn(node); hover(node);
+    if(!S.pruned.has(node.pathId)&&!node.selected){
+      node.el.setAttribute("stroke","var(--sel)");
+      node.el.setAttribute("stroke-width",node.baseW+0.9); }
+  }
+  stage.style.cursor=node?"pointer":"";
+}
+stage.addEventListener("mousemove",e=>{
+  if(S.pickPend) return;                    // one pick per frame is plenty
+  S.pickPend=true;
+  requestAnimationFrame(()=>{ S.pickPend=false; setHover(pickNode(e.clientX,e.clientY)); });
+});
+stage.addEventListener("mouseleave",()=>setHover(null));
 
 /* ============================================================
    5. INTERACTION TOOLS
@@ -855,25 +1502,31 @@ function pruneNode(node){
   for(const n of sub){
     S.pruned.add(n.pathId);
     if(n.voice) stopVoice(n,true);
-    if(n.el){ n.el.setAttribute("stroke","#7a2b2b"); n.el.style.opacity="0.35";
-      n.el.setAttribute("stroke-dasharray","2 3"); }
-    if(n.hit){ n.hit.style.pointerEvents="none"; }
+    n.hovered=false;
+    const el=ensureDyn(n);
+    el.style.transition=""; el.style.opacity="0.35";
+    el.setAttribute("stroke","#7a2b2b");
+    el.setAttribute("stroke-dasharray","2 3");
+    el.setAttribute("stroke-dashoffset","0");
     if(n.leaf){ n.leaf.remove(); n.leaf=null; }
   }
+  bandsDirty=true;
   S.pruned.add(node.pathId);
   if(S.selected && S.pruned.has(S.selected.pathId)){ clearSelection(); $("nodecard").style.display="none"; }
   inspector(`✂ SNIPPED ${node.pathId} — muted ${sub.length} node(s). Growth halted on this limb.`);
   updateStatus();
 }
 function clearSelection(){
-  if(S.lineage){ for(const n of S.lineage){ if(n.el&&!S.pruned.has(n.pathId)){
-    n.el.setAttribute("stroke",n.el.dataset.baseCol); n.el.setAttribute("stroke-width",n.baseW);
-    n.el.style.filter=""; } n.selected=false; } }
+  if(S.lineage){ for(const n of S.lineage){
+    if(n.el&&!S.pruned.has(n.pathId)){
+      n.el.setAttribute("stroke",n.col); n.el.setAttribute("stroke-width",n.baseW);
+      n.el.style.filter=""; }
+    n.selected=false; syncDyn(n); } }
   S.lineage=null; S.selected=null;
 }
 function graftNode(node){
   if(!S.graftPick){ S.graftPick=node;
-    if(node.el)node.el.setAttribute("stroke","var(--graft)");
+    node.selected=true; ensureDyn(node).setAttribute("stroke","var(--graft)");
     inspector(`◄ GRAFT: source limb ${node.pathId} selected (ratio ${node.freq.toFixed(1)}Hz). Now click a target limb.`);
   } else {
     const from=S.graftPick, to=node;
@@ -882,17 +1535,14 @@ function graftNode(node){
     const sub=collectSubtree(to.pathId);
     for(const n of sub){
       n.grafted=true;
-      const blended=foldFreq((n.freq+from.freq)/2, n.depth);
+      // geometric mean, not arithmetic: splicing two pitches should land on the
+      // interval halfway between them, which is a ratio, not an average of Hz
+      const blended=foldFreq(Math.sqrt(n.freq*from.freq), n.depth);
       n.freq=blended;
-      if(n.voice){ n.voice.osc.frequency.setTargetAtTime(blended,ac.currentTime,0.8);
-        if(n.voice.osc2)n.voice.osc2.frequency.setTargetAtTime(blended,ac.currentTime,0.8);
-        const gbpf=Math.min(10000,blended*(1+n.depth*0.5));
-        n.voice.bp.frequency.setTargetAtTime(gbpf,ac.currentTime,0.8);
-        if(n.voice.bp2)n.voice.bp2.frequency.setTargetAtTime(gbpf,ac.currentTime,0.8);
-        n.voice.bpBase=gbpf;
-        if(n.voice.filtDepth)n.voice.filtDepth.gain.setTargetAtTime(gbpf*(0.12+P.drift*0.45),ac.currentTime,0.8); }
+      setVoiceFreq(n,blended,0.8);
     }
-    if(from.el)from.el.setAttribute("stroke",from.el.dataset.baseCol||lerpCol([0x3a,0x6f,0x4f],[0x9f,0xff,0xc0],Math.min(1,from.depth/6)));
+    if(from.el)from.el.setAttribute("stroke",from.col);
+    from.selected=false; syncDyn(from);
     S.graftPick=null;
     inspector(`▬ GRAFTED ${from.pathId} → ${to.pathId}. ${sub.length} voices merged toward ${from.freq.toFixed(1)}Hz.`);
     drawGrafts();
@@ -959,11 +1609,11 @@ function inspectNode(node){
   auditionFreq(node.freq, !!node.voice);
   // highlight root→branch lineage
   const chain=lineageOf(node); S.lineage=chain; S.selected=node; node.selected=true;
-  chain.forEach((n,i)=>{ if(!n.el||S.pruned.has(n.pathId))return;
-    n.selected=true;
-    n.el.setAttribute("stroke", i===0?"var(--sel)":"#ffd27a");
-    n.el.setAttribute("stroke-width", n.baseW + (i===0?1.4:0.7));
-    if(i===0) n.el.style.filter="drop-shadow(0 0 4px rgba(255,225,77,.9))";
+  chain.forEach((n,i)=>{ if(S.pruned.has(n.pathId))return;
+    n.selected=true; const el=ensureDyn(n);
+    el.setAttribute("stroke", i===0?"var(--sel)":"#ffd27a");
+    el.setAttribute("stroke-width", n.baseW + (i===0?1.4:0.7));
+    if(i===0) el.style.filter="drop-shadow(0 0 4px rgba(255,225,77,.9))";
   });
   const rr=ratioForAngle(node.turn), midi=freqToMidi(node.freq);
   const desc=collectSubtree(node.pathId).length-1;
@@ -1021,7 +1671,10 @@ function tick(){
         if(n.decaying||!n.voice||S.pruned.has(n.pathId)){ list.splice(i,1); continue; }
         n.age+=dt;
         if(n.age>9000){ n.decaying=true; decayVoice(n); S.decayCount++;
-          if(n.el)n.el.setAttribute("stroke","#6b5a2b"); list.splice(i,1); }
+          n.col="#6b5a2b"; n.hueB=0;
+          if(n.el) n.el.setAttribute("stroke",n.col);
+          if(n.leaf){ n.leaf.style.transition="opacity 6s ease-in"; n.leaf.setAttribute("opacity","0.08"); }
+          list.splice(i,1); }
       }
       // ♾ perpetual: after the canopy has held & largely decayed, re-seed a new cycle
       if(P.perpetual && now-S.completeAt>PERPETUAL_HOLD){ perpetualBloom(); }
@@ -1034,8 +1687,21 @@ function tick(){
                      : `GROWTH CLOCK: CANOPY COMPLETE — entropy phase`)
       : `GROWTH CLOCK: next split in ${remain.toFixed(1)}s ${fert>1?"(fert ×"+fert+")":""}`;
   }
+  // sparse pitched drops from the canopy — scheduled on an irregular interval
+  // so they never fall into a countable rhythm
+  if(S.running && S.planted && P.bloom>0.001 && ac){
+    S.bloomAcc+=dt;
+    if(S.bloomAcc>=S.nextBloom){
+      S.bloomAcc=0;
+      S.nextBloom=(2200+Math.random()*9000)/(0.25+P.bloom*1.75);
+      bloomEvent();
+    }
+  }
   // hud (throttled — cosmetic text doesn't need 60fps)
   S.frame=(S.frame||0)+1;
+  if(S.frame%2===0) updateSway(now);
+  if(S.frame%3===0) updateShimmer(now);
+  if(S.frame%15===0){ sweepFresh(now); if(bandsDirty) rebuildBands(); }
   if(S.frame%6===0){
     $("hud").innerHTML=`<b>GEN</b> ${S.gen}/${P.maxgen} &nbsp; <b>θ</b> ${P.theta}°<br>`+
       `<b>NODES</b> ${S.nodes.size} &nbsp; <b>VOX</b> ${S.voicesActive}/${S.voiceBudget}<br>`+
@@ -1161,9 +1827,9 @@ bind("theta",v=>P.theta=v,v=>v);
 bind("seglen",v=>P.seglen=v);
 bind("ldecay",v=>P.ldecay=v/100,v=>v);
 bind("maxgen",v=>{P.maxgen=v;});
-bind("wind",v=>{P.wind=v;});
+bind("wind",v=>{P.wind=v;updateUnder&&ac&&updateUnder();});
 bind("master",v=>{P.master=v/100;if(master)master.gain.value=P.master;});
-bind("canopy",v=>{P.canopy=v/100;if(canopyBus)canopyBus.gain.setTargetAtTime(P.canopy,ac.currentTime,0.1);});
+bind("canopy",v=>{P.canopy=v/100;updateHeadroom();});
 bind("roots",v=>{P.roots=v/100;if(underBus)underBus.gain.setTargetAtTime(P.roots,ac.currentTime,0.1);});
 bind("noise",v=>{P.noise=v/100;updateUnder&&ac&&updateUnder();});
 bind("verb",v=>{P.verb=v/100;if(wet)wet.gain.setTargetAtTime(P.verb,ac.currentTime,0.1);});
@@ -1193,14 +1859,42 @@ $("fertburst").onclick=()=>{ S.fertBurstUntil=performance.now()+5000; inspector(
 // ---- EVOLUTION: detune (live twin spread) + drift (slow-modulation depth) ----
 bind("detune",v=>{ P.detune=v; if(!ac)return; const t=ac.currentTime;
   for(const n of S.nodes.values()){ const vo=n.voice; if(!vo)continue;
-    if(vo.osc)vo.osc.detune.setTargetAtTime(-P.detune/2,t,0.2);
-    if(vo.osc2)vo.osc2.detune.setTargetAtTime(P.detune/2,t,0.2); } });
+    vo.oscs.forEach((o,i)=>{ if(o)o.detune.setTargetAtTime(n.cents+P.detune*vo.spread[i],t,0.2); }); } });
 bind("drift",v=>{ P.drift=v/100; if(!ac)return; const t=ac.currentTime;
   if(breathDepth)breathDepth.gain.setTargetAtTime(P.drift*0.10,t,0.3);
+  if(breezeW)breezeW.g.gain.setTargetAtTime(P.drift*0.07,t,0.3);
   for(const n of S.nodes.values()){ const vo=n.voice; if(!vo)continue;
     if(vo.detDepth)vo.detDepth.gain.setTargetAtTime(1.5+P.drift*7,t,0.3);
     if(vo.filtDepth)vo.filtDepth.gain.setTargetAtTime(vo.bpBase*(0.12+P.drift*0.45),t,0.3); } });
 bind("density",v=>{ S.voiceBudget=v; });
+// ---- ORGANICS ----
+bind("articulate",v=>{ P.articulate=v/100; },v=>v);
+bind("wander",v=>{ P.wander=v; if(!ac)return; const t=ac.currentTime;
+  for(const n of S.nodes.values()){ const vo=n.voice; if(vo&&vo.wanderW)vo.wanderW.g.gain.setTargetAtTime(P.wander,t,0.5); } });
+bind("gust",v=>{ P.gust=v/100; if(!ac)return; const t=ac.currentTime;
+  for(const n of S.nodes.values()){ const vo=n.voice; if(!vo)continue;
+    if(vo.gustW)vo.gustW.g.gain.setTargetAtTime(vo.amp*P.gust*0.85,t,0.5);
+    if(vo.gustB)vo.gustB.g.gain.setTargetAtTime(vo.bpBase*P.gust*0.35,t,0.5); }
+  updateUnder(); });
+bind("ticks",v=>{ P.ticks=v/100; });
+bind("bloom",v=>{ P.bloom=v/100; });
+bind("damp",v=>{ P.damp=v/100;
+  // the IR has to be rebuilt for a damping change — do it on a settle so
+  // dragging the fader doesn't rebuild a 4-second buffer on every pixel
+  clearTimeout(S.dampT);
+  S.dampT=setTimeout(()=>{ if(ac&&convolver) convolver.buffer=makeImpulse(4.2,2.4,P.damp); },220);
+});
+$("gravity").onclick=()=>{ P.gravity=!P.gravity;
+  $("gravity").classList.toggle("on",P.gravity);
+  $("gravity").textContent="⚖ GRAVITY: "+(P.gravity?"ON":"OFF");
+  if(S.planted) softRebuild();
+  inspector(P.gravity?"⚖ Harmonic gravity on — compounded ratios snap to the nearest simple JI interval."
+                     :"⚖ Gravity off — raw compounded lattice. Wilder, stranger, less resolvable."); };
+$("sway").onclick=()=>{ S.sway=!S.sway;
+  $("sway").classList.toggle("on",S.sway);
+  $("sway").textContent="🍃 SWAY: "+(S.sway?"ON":"OFF");
+  if(!S.sway) for(const g of BANDS) if(g) g.removeAttribute("transform");
+  inspector(S.sway?"🍃 The canopy moves with the wind.":"🍃 Sway stilled."); };
 $("tempoSync").onclick=()=>{ P.tempoSync=!P.tempoSync;
   $("tempoSync").classList.toggle("on",P.tempoSync);
   $("tempoSync").textContent="🕒 TEMPO SYNC: "+(P.tempoSync?"ON":"OFF");
@@ -1264,7 +1958,7 @@ function restoreSeasonParams(){
   if(widthGain)widthGain.setTargetAtTime(P.width,t,0.6);
   if(spaceSend)spaceSend.gain.setTargetAtTime(P.space,t,0.6);
   if(wet)wet.gain.setTargetAtTime(P.verb,t,0.6);
-  if(canopyBus)canopyBus.gain.setTargetAtTime(P.canopy,t,0.6);
+  if(canopyBus)canopyBus.gain.setTargetAtTime(P.canopy*S.headroom,t,0.6);
 }
 function updateSeasons(now){
   if(!ac)return; const t=ac.currentTime, ts=now/1000, r=S.evoRate/3;
@@ -1273,7 +1967,7 @@ function updateSeasons(now){
   if(widthGain)widthGain.setTargetAtTime(Math.max(0,P.width+d(0.4,2.1)*0.5),t,0.4);
   if(spaceSend)spaceSend.gain.setTargetAtTime(Math.max(0,Math.min(0.9,P.space+d(1.3,4.0)*0.22)),t,0.4);
   if(wet)wet.gain.setTargetAtTime(Math.max(0,Math.min(1,P.verb+d(2.7,0.9)*0.25)),t,0.4);
-  if(canopyBus)canopyBus.gain.setTargetAtTime(Math.max(0.05,P.canopy+d(3.9,1.6)*0.12),t,0.5);
+  if(canopyBus)canopyBus.gain.setTargetAtTime(Math.max(0.05,(P.canopy+d(3.9,1.6)*0.12)*S.headroom),t,0.5);
 }
 
 // re-derive geometry live when morphology/rules change (rebuild to keep math coherent)
@@ -1327,7 +2021,8 @@ $("mutate").onclick=()=>{
 const STRAIN_FIELDS={
   text:["axiom","ruleX","ruleY","ruleF","rulef"],
   slider:["theta","seglen","ldecay","maxgen","wind","cycle","fert",
-          "master","canopy","roots","noise","verb","lo","himid","air","drive","width","space","detune","drift","density","evorate","pulse","rootfreq"],
+          "master","canopy","roots","noise","verb","damp","lo","himid","air","drive","width","space","detune","drift","density","evorate","pulse","rootfreq",
+          "articulate","wander","gust","ticks","bloom"],
   select:["species","preset"]
 };
 $("savestrain").onclick=()=>{
@@ -1367,8 +2062,8 @@ function softRebuild(){
   S.lineage=null; S.selected=null; clearSolo(); $("nodecard").style.display="none";
   S.maxDepth=0; S.agingList=null; S.completeAt=0;
   for(const n of S.nodes.values()){ if(n.voice)stopVoice(n,true); }
-  S.nodes.clear();
-  [...svg.querySelectorAll("line,circle,path")].forEach(e=>e.remove());
+  S.nodes.clear(); S.voiced.clear(); S.fresh.length=0; S.hover=null;
+  clearTree();
   render();
 }
 
@@ -1397,10 +2092,12 @@ $("reset").onclick=()=>{
   S.nodes.clear(); S.pruned.clear(); S.grafts=[]; S.graftPick=null;
   S.gen=0;S.targetGen=0;S.decayCount=0;S.clockAcc=0;S.planted=false;S.running=false;S.completeAt=0;
   S.progRatio=1;S.progIdx=0;S.progAcc=0; S.maxDepth=0; S.agingList=null; $("harmstat").textContent="root: home key (I)";
-  [...svg.querySelectorAll("line,circle,path")].forEach(e=>e.remove());
+  S.bloomAcc=0; S.nextBloom=6000; S.headroom=1; S.voiced.clear(); S.fresh.length=0; S.hover=null;
+  clearTree();
   svg.setAttribute("viewBox","0 0 800 520");
   $("playpause").classList.remove("on");$("playpause").textContent="▶ RESUME";
   if(subGain)subGain.gain.setTargetAtTime(0,ac.currentTime,0.3);
+  if(subOctGain)subOctGain.gain.setTargetAtTime(0,ac.currentTime,0.3);
   if(noiseGain)noiseGain.gain.setTargetAtTime(0,ac.currentTime,0.3);
   if(freezeGain){ freezeGain.gain.setTargetAtTime(0,ac.currentTime,0.3);
     $("freeze").classList.remove("on"); $("freeze").textContent="❆ FREEZE CANOPY"; }
@@ -1409,9 +2106,17 @@ $("reset").onclick=()=>{
 };
 // click empty canvas → deselect / cancel graft pick
 stage.addEventListener("click",e=>{
-  if(e.target.tagName==="line") return; // handled by segment
-  if(S.graftPick){ if(S.graftPick.el)S.graftPick.el.setAttribute("stroke",S.graftPick.el.dataset.baseCol); S.graftPick=null; inspector("Graft cancelled."); return; }
+  const hit=pickNode(e.clientX,e.clientY);
+  if(hit){ onSegClick(hit); return; }
+  if(S.graftPick){ const gp=S.graftPick;
+    if(gp.el)gp.el.setAttribute("stroke",gp.col);
+    gp.selected=false; syncDyn(gp); S.graftPick=null; inspector("Graft cancelled."); return; }
   if(S.selected){ clearSelection(); $("nodecard").style.display="none"; }
+});
+
+stage.addEventListener("dblclick",e=>{
+  const hit=pickNode(e.clientX,e.clientY);
+  if(hit){ e.preventDefault(); toggleSolo(hit); }
 });
 
 // keyboard shortcuts (ignored while typing in a field)
@@ -1435,11 +2140,11 @@ document.addEventListener("keydown",e=>{
 document.querySelectorAll(".menu span").forEach(m=>m.onclick=()=>{
   const t=m.textContent;
   const info={File:"File ▸ use SAVE .SVG / REC .WAV in the Export panel.",
-    Cultivate:"Cultivate ▸ PLANT SEED then let the Deep-Time clock split branches.",
+    Cultivate:"Cultivate ▸ PLANT SEED then let the Deep-Time clock split branches. WIND moves the drawing, the sway and the air.",
     Graft:"Graft ▸ pick the GRAFT tool, click a source limb then a target limb.",
-    Tuning:"Tuning ▸ branch angle θ maps to Just-Intonation ratios (see table).",
+    Tuning:"Tuning ▸ branch angle θ maps to JI ratios. GRAVITY keeps compounded ratios simple; WANDER keeps them imperfect.",
     MIDI:"MIDI ▸ click ENABLE MIDI to stream notes to external hardware.",
-    Help:"Botanical Sequencer: grow fractal trees; every branch is a drone voice."};
+    Help:"Botanical Sequencer: grow fractal trees; every branch is a drone voice. ORGANICS decides how alive it sounds."};
   inspector(info[t]||t);
 });
 
