@@ -374,6 +374,7 @@ const S={
   progRatio:1, progIdx:0, progAcc:0,
   // organics
   headroom:1, sway:true, bloomAcc:0, nextBloom:6000, voiced:new Set(), fresh:[], hover:null,
+  voiceQ:[], voiceQi:0,
 };
 const P={ // params
   theta:27, seglen:34, ldecay:0.78, maxgen:6, species:"fern", wind:0,
@@ -510,17 +511,21 @@ function foldFreq(f,depth){
 function interpret(str){
   const th=P.theta, base=P.seglen;
   // start bottom-center, heading straight up (-90deg)
-  const st={ x:0, y:0, ang:-90, depth:0, ratio:1, path:"r", parentSeg:null, pend:0 };
-  const stack=[]; let cur={...st};
+  // fixed-shape literals rather than {...cur}: this runs once per bracket, and a
+  // dense canopy has thousands of them
+  const clone=c=>({x:c.x,y:c.y,ang:c.ang,depth:c.depth,ratio:c.ratio,
+                   path:c.path,parentSeg:c.parentSeg,pend:c.pend});
+  let cur={ x:0, y:0, ang:-90, depth:0, ratio:1, path:"r", parentSeg:null, pend:0 };
+  const stack=[];
   const segs=[];
-  let counter={"r":0};
+  const counter=new Map();   // long dynamic string keys: a Map beats a plain object
   function segLen(d){ return base*Math.pow(P.ldecay,d); }
   for(const c of str){
     if(c==='F'||c==='G'){
       const d=cur.depth;
       const len=segLen(d);
-      counter[cur.path]=(counter[cur.path]||0)+1;
-      const pid=cur.path+"/"+counter[cur.path];
+      const cn=(counter.get(cur.path)||0)+1; counter.set(cur.path,cn);
+      const pid=cur.path+"/"+cn;
       // Wind bends the DRAWING and detunes the voice by a few cents — it no
       // longer knocks a branch into a different JI class. Before, a gust could
       // silently re-tune a 7:6 limb to a 6:5, which reads as random, not windy.
@@ -547,12 +552,12 @@ function interpret(str){
         // pend travels on the stack. It used to be a single loop-scoped
         // variable, so a turn made inside a bracket leaked out past the ']'
         // and mistuned the next segment on the parent branch.
-        stack.push({...cur});
-        const bk=cur.path;
-        counter["B"+bk]=(counter["B"+bk]||0)+1;
-        cur.path=cur.path+"."+counter["B"+bk];
+        stack.push(clone(cur));
+        const bkey="B"+cur.path, bn=(counter.get(bkey)||0)+1;
+        counter.set(bkey,bn);
+        cur.path=cur.path+"."+bn;
         cur.depth=cur.depth+1;
-        if(counter[cur.path]===undefined)counter[cur.path]=0;
+        if(!counter.has(cur.path))counter.set(cur.path,0);
       } else if(c===']'){
         if(stack.length) cur=stack.pop();
       }
@@ -573,6 +578,7 @@ function interpret(str){
 let ac=null, master, limiter, dry, wet, convolver, canopyBus, underBus, subOsc, subGain, noiseNode, noiseGain, noiseLP, recDest;
 let widthGain, spaceSend, ppMergeNode, breathDepth, airShelf, loShelf, midPeak, driveShaper, driveMix, freezeGain;
 let revBus, revIn, revLP, subHP, tickBus, tickSend, breezeW, breezeGain, breezeCut;
+let convolverB, convA, convB, revActive="A", revSwapping=false;
 let subOct, subOctGain, subBreath, subOctBreath;
 let WANDER=null, NZ_PINK=null;
 
@@ -654,7 +660,13 @@ function buildAudio(){
   limiter.threshold.value=-3; limiter.knee.value=12; limiter.ratio.value=6;
   limiter.attack.value=0.012; limiter.release.value=0.45;
   // ---- reverb: frequency-dependent decay IR (see makeImpulse) ----
+  // Two convolvers, crossfaded. Assigning a new buffer to a LIVE ConvolverNode
+  // cuts its tail mid-flight, which was by far the loudest click in the
+  // instrument; the replacement IR is built into whichever one is silent.
   convolver=ac.createConvolver(); convolver.buffer=makeImpulse(4.2,2.4,P.damp);
+  convolverB=ac.createConvolver(); convolverB.buffer=makeImpulse(4.2,2.4,P.damp);
+  convA=ac.createGain(); convA.gain.value=1;
+  convB=ac.createGain(); convB.gain.value=0;
   dry=ac.createGain(); wet=ac.createGain();
   wet.gain.value=P.verb; dry.gain.value=1;
   canopyBus=ac.createGain(); canopyBus.gain.value=P.canopy;
@@ -663,14 +675,15 @@ function buildAudio(){
   // whole canopy going in at one level — that is what creates depth of field.
   revBus=ac.createGain(); revBus.gain.value=1;
   revLP=ac.createBiquadFilter(); revLP.type="lowpass"; revLP.frequency.value=6200; revLP.Q.value=0.5;
-  revBus.connect(revLP); revLP.connect(convolver);
+  revBus.connect(revLP); revLP.connect(convolver); revLP.connect(convolverB);
   // ---- FREEZE bus: hold the canopy as a sustained pad via a long-tail convolver ----
   const freezeConv=ac.createConvolver(); freezeConv.buffer=makeImpulse(12,0.6,0.5);
   freezeGain=ac.createGain(); freezeGain.gain.value=0;
   canopyBus.connect(freezeConv); freezeConv.connect(freezeGain); freezeGain.connect(dry);
   canopyBus.connect(dry);
   underBus.connect(dry);
-  convolver.connect(wet);
+  convolver.connect(convA); convolverB.connect(convB);
+  convA.connect(wet); convB.connect(wet);
   dry.connect(master); wet.connect(master);
   // ---- transient layer: birth ticks, leaf-fall, bloom plucks ----
   tickBus=ac.createGain(); tickBus.gain.value=1;
@@ -1080,7 +1093,7 @@ function decayVoice(node){
   if(v.sendLP) v.sendLP.frequency.setTargetAtTime(700,t,T*0.4);
   if(v.send) v.send.gain.setTargetAtTime(Math.min(1.1,v.send.gain.value*1.7),t,T*0.4);
   v.g.gain.cancelScheduledValues(t);
-  v.g.gain.setValueAtTime(Math.max(0.0002,v.amp),t);
+  v.g.gain.setValueAtTime(Math.max(0.0002,v.g.gain.value),t);   // hold where it IS, don't jump to amp
   v.g.gain.setTargetAtTime(0.00008,t+T*0.16,T*0.30);
   fallEvent(node);
   const endT=t+T+3;
@@ -1093,10 +1106,29 @@ function decayVoice(node){
 }
 function stopVoice(node,fast){
   const v=node.voice; if(!v)return; const t=ac.currentTime;
+  // `fast` may be a boolean (legacy) or an explicit fade length in seconds
+  const fade=(typeof fast==="number")?fast:(fast?0.25:1.4);
+  // The tremolo, gust and trem-wander gains are CONNECTED to g.gain, and a
+  // connected signal sums on top of the intrinsic value — so ramping g.gain to
+  // zero left the voice still audibly moving, and stop() then cut it mid-cycle.
+  // That hard cut was the pop on every species / angle / rule / preset change,
+  // since all of those rebuild the tree through here.
+  const zero=prm=>{ if(!prm)return;
+    prm.cancelScheduledValues(t);
+    prm.setValueAtTime(prm.value,t);
+    prm.linearRampToValueAtTime(0,t+fade*0.8); };
+  zero(v.lfoG&&v.lfoG.gain);
+  zero(v.tremW&&v.tremW.g.gain);
+  zero(v.gustW&&v.gustW.g.gain);
   v.g.gain.cancelScheduledValues(t);
   v.g.gain.setValueAtTime(Math.max(0.0002,v.g.gain.value),t);
-  v.g.gain.exponentialRampToValueAtTime(0.0001,t+(fast?0.25:1.4));
-  const stopT=t+(fast?0.4:1.8);
+  v.g.gain.exponentialRampToValueAtTime(0.0001,t+fade);
+  // final gate: nothing is connected to mute.gain, so a ramp on it genuinely
+  // reaches silence no matter what the rest of the voice is doing
+  if(v.mute){ v.mute.gain.cancelScheduledValues(t);
+    v.mute.gain.setValueAtTime(v.mute.gain.value,t);
+    v.mute.gain.linearRampToValueAtTime(0,t+fade); }
+  const stopT=t+fade+0.18;
   v.srcs.forEach(o=>{ if(o){try{o.stop(stopT);}catch(e){}} });
   midiNoteOff(node);
   node.voice=null; S.voiced.delete(node); S.voicesActive=Math.max(0,S.voicesActive-1); updateHeadroom();
@@ -1310,6 +1342,25 @@ function updateShimmer(now){
     if(n.leaf) n.leaf.setAttribute("opacity",(0.30+0.65*a).toFixed(2));
   }
 }
+/* Voices are constructed a few per frame rather than all inside render().
+   Rebuilding a dense canopy was blocking the main thread for ~150ms — more than
+   three audio buffers — which drops frames and splices anything the WAV
+   recorder is capturing at the time. The voices are already staggered by up to
+   several seconds before they sound, so spreading the CONSTRUCTION over a
+   handful of frames costs nothing audible. */
+function drainVoiceQ(){
+  const q=S.voiceQ;
+  if(S.voiceQi>=q.length){ if(q.length){q.length=0;S.voiceQi=0;} return; }
+  let budget=8;
+  while(S.voiceQi<q.length && budget-->0){
+    const n=q[S.voiceQi++];
+    if(S.voicesActive>=S.voiceBudget){ q.length=0; S.voiceQi=0; return; }
+    if(!n||n.voice||!S.nodes.has(n.pathId)||S.pruned.has(n.pathId)) continue;
+    startVoice(n);
+  }
+  if(S.voiceQi>=q.length){ q.length=0; S.voiceQi=0; }
+}
+
 /* freshly-unfurled branches settle into the merged paths once they finish */
 function sweepFresh(now){
   if(!S.fresh.length) return;
@@ -1344,7 +1395,7 @@ function render(){
   // Only a bounded number of new branches get the unfurl animation; past that
   // they arrive already settled. A generation can add several thousand at once,
   // and animating all of them is what the frame budget cannot afford.
-  let anim=900;
+  let anim=420;
   for(const s of segs){
     if(S.pruned.has(s.pathId)) continue; // stays snipped
     let node=S.nodes.get(s.pathId);
@@ -1352,12 +1403,13 @@ function render(){
       node=makeNode(s);
       S.nodes.set(s.pathId,node);
       drawSeg(node, anim-->0);
-      startVoice(node);
+      S.voiceQ.push(node);          // built over the next few frames, not right now
     } else updateSeg(node,s);
   }
   drawGrafts();
   updateBandPivots();
-  rebuildBands();
+  if(BANDPATH.some(m=>m&&m.size)) bandsDirty=true;   // already on screen: refold next frame
+  else rebuildBands();                              // first draw: don't leave it blank
   S.gen=S.targetGen;
   updateUnder();
   updateStatus();
@@ -1697,6 +1749,7 @@ function tick(){
       bloomEvent();
     }
   }
+  drainVoiceQ();
   // hud (throttled — cosmetic text doesn't need 60fps)
   S.frame=(S.frame||0)+1;
   if(S.frame%2===0) updateSway(now);
@@ -1828,7 +1881,10 @@ bind("seglen",v=>P.seglen=v);
 bind("ldecay",v=>P.ldecay=v/100,v=>v);
 bind("maxgen",v=>{P.maxgen=v;});
 bind("wind",v=>{P.wind=v;updateUnder&&ac&&updateUnder();});
-bind("master",v=>{P.master=v/100;if(master)master.gain.value=P.master;});
+bind("master",v=>{P.master=v/100;
+  // was a direct .value assignment — an instantaneous step on the live master
+  // bus, i.e. zipper noise the whole time you drag the fader
+  if(master)master.gain.setTargetAtTime(P.master,ac.currentTime,0.03);});
 bind("canopy",v=>{P.canopy=v/100;updateHeadroom();});
 bind("roots",v=>{P.roots=v/100;if(underBus)underBus.gain.setTargetAtTime(P.roots,ac.currentTime,0.1);});
 bind("noise",v=>{P.noise=v/100;updateUnder&&ac&&updateUnder();});
@@ -1879,11 +1935,26 @@ bind("gust",v=>{ P.gust=v/100; if(!ac)return; const t=ac.currentTime;
 bind("ticks",v=>{ P.ticks=v/100; });
 bind("bloom",v=>{ P.bloom=v/100; });
 bind("damp",v=>{ P.damp=v/100;
-  // the IR has to be rebuilt for a damping change — do it on a settle so
-  // dragging the fader doesn't rebuild a 4-second buffer on every pixel
+  // immediate, smooth part: the reverb send's own tone follows the fader live
+  if(revLP) revLP.frequency.setTargetAtTime(2200+(1-P.damp)*9000,ac.currentTime,0.12);
+  // deeper part: rebuild the IR so the DECAY stays frequency-dependent. Done on
+  // a settle (a 4s buffer per pixel of fader travel is not free) and crossfaded.
   clearTimeout(S.dampT);
-  S.dampT=setTimeout(()=>{ if(ac&&convolver) convolver.buffer=makeImpulse(4.2,2.4,P.damp); },220);
+  S.dampT=setTimeout(swapDampIR,320);
 });
+function swapDampIR(){
+  if(!ac||!convolverB||revSwapping) return;
+  revSwapping=true;
+  const t=ac.currentTime, XF=0.4;
+  const toB=revActive==="A";
+  const inc=toB?convB:convA, dec=toB?convA:convB;
+  (toB?convolverB:convolver).buffer=makeImpulse(4.2,2.4,P.damp);  // silent one
+  for(const g of [inc,dec]){ g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value,t); }
+  inc.gain.linearRampToValueAtTime(1,t+XF);
+  dec.gain.linearRampToValueAtTime(0,t+XF);
+  revActive=toB?"B":"A";
+  setTimeout(()=>{revSwapping=false;},XF*1000+60);
+}
 $("gravity").onclick=()=>{ P.gravity=!P.gravity;
   $("gravity").classList.toggle("on",P.gravity);
   $("gravity").textContent="⚖ GRAVITY: "+(P.gravity?"ON":"OFF");
@@ -2061,8 +2132,14 @@ function softRebuild(){
   // keep pruned set & grafts; wipe visual+voices, regrow to current targetGen
   S.lineage=null; S.selected=null; clearSolo(); $("nodecard").style.display="none";
   S.maxDepth=0; S.agingList=null; S.completeAt=0;
-  for(const n of S.nodes.values()){ if(n.voice)stopVoice(n,true); }
+  // The old canopy dissolves over ~0.9s while the new one swells in on its own
+  // staggered birth, so changing species or angle reads as the tree turning
+  // into something else rather than being cut off and restarted. (The voice
+  // slots are released synchronously inside stopVoice, so the outgoing tails
+  // never starve the incoming canopy of its budget.)
+  for(const n of S.nodes.values()){ if(n.voice)stopVoice(n,0.9); }
   S.nodes.clear(); S.voiced.clear(); S.fresh.length=0; S.hover=null;
+  S.voiceQ.length=0; S.voiceQi=0;
   clearTree();
   render();
 }
@@ -2088,11 +2165,12 @@ $("playpause").onclick=()=>{
 };
 $("reset").onclick=()=>{
   clearSelection(); clearSolo(); $("nodecard").style.display="none";
-  for(const n of S.nodes.values()){ if(n.voice)stopVoice(n,true); }
+  for(const n of S.nodes.values()){ if(n.voice)stopVoice(n,0.45); }
   S.nodes.clear(); S.pruned.clear(); S.grafts=[]; S.graftPick=null;
   S.gen=0;S.targetGen=0;S.decayCount=0;S.clockAcc=0;S.planted=false;S.running=false;S.completeAt=0;
   S.progRatio=1;S.progIdx=0;S.progAcc=0; S.maxDepth=0; S.agingList=null; $("harmstat").textContent="root: home key (I)";
   S.bloomAcc=0; S.nextBloom=6000; S.headroom=1; S.voiced.clear(); S.fresh.length=0; S.hover=null;
+  S.voiceQ.length=0; S.voiceQi=0;
   clearTree();
   svg.setAttribute("viewBox","0 0 800 520");
   $("playpause").classList.remove("on");$("playpause").textContent="▶ RESUME";
