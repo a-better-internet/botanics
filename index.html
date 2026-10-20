@@ -344,6 +344,9 @@
     <span class="stat">VOICES <b id="sVoices">0</b></span>
     <span class="stat">DECAY <b id="sDecay">0</b></span>
     <span class="stat grow" id="sClock">GROWTH CLOCK: idle</span>
+    <span class="stat" id="sErr" style="color:#7a0000;max-width:380px;overflow:hidden;white-space:nowrap"></span>
+    <button class="b" id="revive" title="rebuild the audio engine without reloading the page"
+      style="font-size:8px;padding:2px 6px">⟳ REVIVE AUDIO</button>
     <span class="stat"><span class="led" id="ledmidi"></span>MIDI</span>
   </div>
 </div>
@@ -374,7 +377,7 @@ const S={
   progRatio:1, progIdx:0, progAcc:0,
   // organics
   headroom:1, sway:true, bloomAcc:0, nextBloom:6000, voiced:new Set(), fresh:[], hover:null,
-  voiceQ:[], voiceQi:0,
+  voiceQ:[], voiceQi:0, voiceTarget:0, err:{}, errLast:"", deadTicks:0, lastRevive:0,
 };
 const P={ // params
   theta:27, seglen:34, ldecay:0.78, maxgen:6, species:"fern", wind:0,
@@ -592,7 +595,7 @@ function interpret(str){
 let ac=null, master, limiter, dry, wet, convolver, canopyBus, underBus, subOsc, subGain, noiseNode, noiseGain, noiseLP, recDest;
 let widthGain, spaceSend, ppMergeNode, breathDepth, airShelf, loShelf, midPeak, driveShaper, driveMix, freezeGain;
 let revBus, revIn, revLP, subHP, tickBus, tickSend, breezeW, breezeGain, breezeCut;
-let convolverB, convA, convB, revActive="A", revSwapping=false;
+let convolverB, convA, convB, revActive="A", revSwapping=false, outTap=null;
 let subOct, subOctGain, subBreath, subOctBreath;
 let WANDER=null, NZ_PINK=null;
 
@@ -742,6 +745,7 @@ function buildAudio(){
   airShelf.connect(preDrive); preDrive.connect(driveShaper); driveShaper.connect(driveMix); driveMix.connect(limiter);
   limiter.connect(ac.destination);
   recDest=ac.createGain(); limiter.connect(recDest);
+  outTap=ac.createAnalyser(); outTap.fftSize=1024; limiter.connect(outTap);
   // ---- underground: root + sub-octave + brown noise, all breathing ----
   // The sub used to be a lone sine an octave BELOW the root — at the default
   // 55 Hz root that is 27.5 Hz, which most systems cannot reproduce at all.
@@ -1110,6 +1114,7 @@ function decayVoice(node){
   v.g.gain.cancelScheduledValues(t);
   v.g.gain.setValueAtTime(Math.max(0.0002,v.g.gain.value),t);   // hold where it IS, don't jump to amp
   v.g.gain.setTargetAtTime(0.00008,t+T*0.16,T*0.30);
+  S.voiceTarget=Math.max(0,S.voiceTarget-1);   // this limb is spent, not lost
   fallEvent(node);
   const endT=t+T+3;
   v.srcs.forEach(o=>{ if(o){try{o.stop(endT);}catch(e){}} });
@@ -1380,6 +1385,21 @@ function drainVoiceQ(){
   if(S.voiceQi>=q.length){ q.length=0; S.voiceQi=0; }
 }
 
+/* How many voices the instrument INTENDS to have sounding. Declared rather
+   than inferred, so "we lost voices and must restore them" can be told apart
+   from "these limbs are spent and should stay quiet". Only senescence and
+   pruning lower it; anything else that takes voices away leaves it high and
+   the reconciler puts them back. */
+function countEligible(){
+  let n=0;
+  for(const x of S.nodes.values())
+    if(!x.decaying && !S.pruned.has(x.pathId)) n++;
+  return n;
+}
+function retargetVoices(){
+  S.voiceTarget=Math.min(S.voiceBudget,countEligible());
+}
+
 /* ---- watchdog -------------------------------------------------------
    Runs about once a second. Everything here is a safety net rather than
    normal operation: if any of it finds something to do, something already
@@ -1395,25 +1415,63 @@ function voiceWatchdog(){
     }
   }
   // (b) browsers suspend audio contexts on their own schedule
-  if(ac.state==="suspended" && S.planted && S.running){ try{ac.resume();}catch(e){} }
-  // (c) last resort: a planted, running canopy with no voice at all cannot
-  //     recover on its own, because voices are only ever created for NEW
-  //     branches. Only act on silence that is NOT already explained: a limb
-  //     that sounded and then stopped without entering senescence is a limb
-  //     something took away. A canopy that aged out in the entropy phase has
-  //     every such limb marked decaying, so it is left to rest.
-  if(S.planted && S.running && S.voiced.size===0 && S.voiceQi>=S.voiceQ.length){
-    let lost=0;
-    for(const n of S.nodes.values())
-      if(n.everVoiced && !n.voice && !n.decaying && !S.pruned.has(n.pathId)){ lost++; break; }
-    if(!lost) return;
-    let revived=0;
+  // Safari also uses "interrupted"; anything that is not running and should be
+  if(ac.state!=="running" && S.planted && S.running){ try{ac.resume();}catch(e){} }
+  // (c) Reconcile the sounding canopy against the target, every pass. This
+  //     starts voices DIRECTLY rather than queueing them, so it holds even if
+  //     the queue or the frame loop is in trouble — the previous version only
+  //     acted at exactly zero voices and additionally required a node that had
+  //     already sounded, which is never true right after a rebuild, so it stood
+  //     down in precisely the case it existed for.
+  if(S.planted && S.running && S.voiced.size<S.voiceTarget){
+    let added=0;
     for(const n of S.nodes.values()){
-      if(revived>=S.voiceBudget) break;
+      if(S.voiced.size>=S.voiceTarget || added>=16) break;
       if(n.voice||n.decaying||S.pruned.has(n.pathId)) continue;
-      S.voiceQ.push(n); revived++;
+      try{ startVoice(n); added++; }catch(e){ break; }
     }
-    if(revived) inspector("⚠ canopy had fallen silent — "+revived+" branches re-voiced.");
+    if(added && S.voiced.size<=added) inspector("⚠ canopy had fallen silent — re-voicing ("+added+").");
+  }
+  // (d) The graph itself can die in ways no amount of bookkeeping will fix.
+  //     If voices exist and the faders are open but nothing is coming out,
+  //     rebuild the engine rather than leave the user to reload the page.
+  if(S.planted && S.running && S.voiced.size>0 && outTap && P.master>0.02 && P.canopy>0.02){
+    const d=new Float32Array(outTap.fftSize); outTap.getFloatTimeDomainData(d);
+    let sum=0; for(const v of d){ if(!isFinite(v)){ sum=NaN; break; } sum+=v*v; }
+    const rms=Math.sqrt(sum/d.length);
+    if(!(rms>0.0003)) S.deadTicks++; else S.deadTicks=0;
+    if(S.deadTicks>=5 && performance.now()-S.lastRevive>15000){
+      S.deadTicks=0; reviveAudio(isFinite(rms)?"output fell silent":"non-finite output");
+    }
+  } else S.deadTicks=0;
+}
+
+/* Rebuild the whole audio engine on a fresh AudioContext, keeping the tree.
+   The last line of defence: whatever state the graph got into, this clears it
+   without the page reload the user would otherwise need. */
+function reviveAudio(why){
+  S.lastRevive=performance.now();
+  try{
+    if(recording){ try{recProc.disconnect();}catch(e){} recording=false;
+      $("recwav").textContent="● REC .WAV"; $("recwav").classList.remove("on");
+      $("recstat").textContent="recorder: stopped (audio engine was rebuilt)"; }
+    for(const n of S.nodes.values()){ n.voice=null; }
+    S.voiced.clear(); S.voiceQ.length=0; S.voiceQi=0;
+    const old=ac;
+    // buildAudio() early-returns while ac is set, and every buffer belongs to
+    // the old context, so these have to go before it can run again
+    ac=null; WANDER=null; NZ_PINK=null; outTap=null;
+    revActive="A"; revSwapping=false;
+    buildAudio();
+    if(old){ try{ old.close(); }catch(e){} }
+    if(freezeGain){ $("freeze").classList.remove("on"); $("freeze").textContent="❆ FREEZE CANOPY"; }
+    retargetVoices();
+    updateUnder();
+    inspector("⟳ audio engine rebuilt ("+why+") — sound restored, no reload needed.");
+    S.errLast="";
+  }catch(e){
+    console.error("botanical: audio rebuild failed —",e);
+    S.errLast="audio rebuild failed: "+(e&&e.message||e);
   }
 }
 
@@ -1462,6 +1520,7 @@ function render(){
       S.voiceQ.push(node);          // built over the next few frames, not right now
     } else updateSeg(node,s);
   }
+  retargetVoices();
   drawGrafts();
   updateBandPivots();
   if(BANDPATH.some(m=>m&&m.size)) bandsDirty=true;   // already on screen: refold next frame
@@ -1619,6 +1678,7 @@ function pruneNode(node){
     if(n.leaf){ n.leaf.remove(); n.leaf=null; }
   }
   bandsDirty=true;
+  S.voiceTarget=Math.max(0,Math.min(S.voiceTarget,countEligible()));
   S.pruned.add(node.pathId);
   if(S.selected && S.pruned.has(S.selected.pathId)){ clearSelection(); $("nodecard").style.display="none"; }
   inspector(`✂ SNIPPED ${node.pathId} — muted ${sub.length} node(s). Growth halted on this limb.`);
@@ -1750,15 +1810,25 @@ function inspector(t){ $("inspector").textContent=t; }
 /* ============================================================
    6. MAIN TICK
    ============================================================ */
-function tick(){
-  // Voice construction, growth and the watchdog all live in this loop, so a
-  // single thrown frame used to take the instrument down for good. It now
-  // always re-arms: one bad frame costs a frame.
-  try{ tickBody(); }
+/* Each section is isolated. Wrapping the whole loop in one try/catch was not
+   enough — and was actively harmful: voice construction ran AFTER growth and
+   the visuals, so anything throwing upstream silently starved the audio every
+   frame while the loop itself looked healthy. Sound comes first now, and a
+   failure in one section can neither starve another nor hide. */
+function section(name,fn){
+  try{ fn(); }
   catch(e){
-    if(!S.tickErr){ S.tickErr=1; console.error("tick error (recovered):",e);
-      inspector("⚠ recovered from an internal error — the instrument keeps running."); }
+    const n=(S.err[name]=(S.err[name]||0)+1);
+    if(n===1){ console.error("botanical: '"+name+"' failed —",e);
+      S.errLast=name+": "+(e&&e.message||e); }
   }
+}
+function tick(){
+  section("voices",drainVoiceQ);      // audio before anything else, always
+  section("watchdog",()=>{ if((S.frame|0)%45===0) voiceWatchdog(); });
+  section("growth",tickBody);
+  section("visuals",tickVisuals);
+  section("readout",tickReadout);
   requestAnimationFrame(tick);
 }
 function tickBody(){
@@ -1816,12 +1886,16 @@ function tickBody(){
       bloomEvent();
     }
   }
-  drainVoiceQ();
-  // hud (throttled — cosmetic text doesn't need 60fps)
+}
+function tickVisuals(){
+  const now=performance.now();
   S.frame=(S.frame||0)+1;
   if(S.frame%2===0) updateSway(now);
   if(S.frame%3===0) updateShimmer(now);
   if(S.frame%15===0){ sweepFresh(now); if(bandsDirty) rebuildBands(); }
+}
+function tickReadout(){
+  const now=performance.now();
   if(S.frame%6===0){
     $("hud").innerHTML=`<b>GEN</b> ${S.gen}/${P.maxgen} &nbsp; <b>θ</b> ${P.theta}°<br>`+
       `<b>NODES</b> ${S.nodes.size} &nbsp; <b>VOX</b> ${S.voicesActive}/${S.voiceBudget}<br>`+
@@ -1829,7 +1903,10 @@ function tickBody(){
   }
   if(S.frame%18===0) updateSounding();
   if(S.seasons && S.frame%4===0) updateSeasons(now);
-  if(S.frame%45===0) voiceWatchdog();
+  if(S.frame%30===0){
+    const e=$("sErr");
+    if(e) e.textContent=S.errLast?("⚠ "+S.errLast).slice(0,52):"";
+  }
 }
 /* live tally of currently-voicing Just-Intonation intervals */
 function updateSounding(){
@@ -1942,7 +2019,21 @@ document.querySelectorAll(".tool").forEach(t=>{
 });
 // sliders
 function bind(id,fn,fmt){ const el=$(id),v=$(id+"V");
-  el.oninput=()=>{ const val=parseFloat(el.value); fn(val); if(v)v.textContent=fmt?fmt(val):val; }; }
+  el.oninput=()=>{ const val=parseFloat(el.value);
+    // one misbehaving control must not break the drag, the readout, or anything else
+    try{ fn(val); }
+    catch(e){ console.error("botanical: control '"+id+"' failed —",e);
+      S.errLast="control "+id+": "+(e&&e.message||e); }
+    if(v)v.textContent=fmt?fmt(val):val; }; }
+/* every toggle button, guarded the same way */
+function guardClicks(){
+  for(const b of document.querySelectorAll("button.b, .tool, .menu span")){
+    const h=b.onclick; if(!h) continue;
+    b.onclick=ev=>{ try{ return h.call(b,ev); }
+      catch(e){ console.error("botanical: '"+(b.id||b.textContent||"button").trim()+"' failed —",e);
+        S.errLast=(b.id||"button")+": "+(e&&e.message||e); } };
+  }
+}
 bind("theta",v=>P.theta=v,v=>v);
 bind("seglen",v=>P.seglen=v);
 bind("ldecay",v=>P.ldecay=v/100,v=>v);
@@ -1992,6 +2083,7 @@ bind("drift",v=>{ P.drift=v/100; if(!ac)return; const t=ac.currentTime;
 bind("density",v=>{ const grew=v>S.voiceBudget; S.voiceBudget=v;
   // raising the budget used to do nothing until the tree was rebuilt, because
   // voices are only ever created for newly-grown branches
+  retargetVoices();
   if(grew && S.planted && ac){
     let want=S.voiceBudget-S.voiced.size;
     for(const n of S.nodes.values()){
@@ -2247,7 +2339,7 @@ $("reset").onclick=()=>{
   S.gen=0;S.targetGen=0;S.decayCount=0;S.clockAcc=0;S.planted=false;S.running=false;S.completeAt=0;
   S.progRatio=1;S.progIdx=0;S.progAcc=0; S.maxDepth=0; S.agingList=null; $("harmstat").textContent="root: home key (I)";
   S.bloomAcc=0; S.nextBloom=6000; S.headroom=1; S.voiced.clear(); S.fresh.length=0; S.hover=null;
-  S.voiceQ.length=0; S.voiceQi=0;
+  S.voiceQ.length=0; S.voiceQi=0; S.voiceTarget=0; S.deadTicks=0;
   clearTree();
   svg.setAttribute("viewBox","0 0 800 520");
   $("playpause").classList.remove("on");$("playpause").textContent="▶ RESUME";
@@ -2291,6 +2383,16 @@ document.addEventListener("keydown",e=>{
   }
 });
 
+// manual escape hatch: whatever state the engine is in, this clears it
+$("revive").onclick=()=>{
+  if(!ac){ buildAudio(); if(ac.state!=="running")ac.resume();
+    inspector("⟳ audio engine started."); return; }
+  if(ac.state!=="running"){ ac.resume(); }
+  reviveAudio("manual");
+  if(S.planted && !S.running){ S.running=true;
+    $("playpause").classList.add("on"); $("playpause").textContent="❚❚ PAUSE"; }
+};
+
 // menu bar cosmetics
 document.querySelectorAll(".menu span").forEach(m=>m.onclick=()=>{
   const t=m.textContent;
@@ -2302,6 +2404,14 @@ document.querySelectorAll(".menu span").forEach(m=>m.onclick=()=>{
     Help:"Botanical Sequencer: grow fractal trees; every branch is a drone voice. ORGANICS decides how alive it sounds."};
   inspector(info[t]||t);
 });
+
+// Surface anything uncaught where it can be read and reported, instead of it
+// vanishing into a console nobody has open.
+window.addEventListener("error",e=>{
+  S.errLast=(e.message||"error")+" @"+(e.lineno||"?")+":"+(e.colno||"?"); });
+window.addEventListener("unhandledrejection",e=>{
+  S.errLast="promise: "+((e.reason&&e.reason.message)||e.reason||"?"); });
+guardClicks();
 
 // kick the loop
 $("sClock").textContent="GROWTH CLOCK: idle — press PLANT SEED";
