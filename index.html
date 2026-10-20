@@ -367,7 +367,7 @@ const S={
   graftPick:null,
   clockAcc:0, lastT:performance.now(),
   fertBurstUntil:0,
-  voiceBudget:44, voicesActive:0, decayCount:0,
+  voiceBudget:44, decayCount:0,
   completeAt:0, maxDepth:0, agingList:null,
   // deep-time evolution
   seasons:false, harmony:false, evoRate:3,
@@ -391,6 +391,15 @@ const P={ // params
   damp:0.55,        // reverb high-frequency damping (air absorption)
   gravity:true,     // pull compounded ratios to the nearest simple JI interval
 };
+/* The live voice count is DERIVED from the set of nodes that hold a voice,
+   never incremented and decremented by hand. The hand-kept counter could drift
+   above the truth under churn (observed: 88 counted, 64 real), and because
+   startVoice refuses to run once the count reaches the budget, a phantom count
+   silenced the whole instrument permanently — no voice could ever start again,
+   and only a page reload cleared it. A derived count cannot say anything that
+   is not true of the set. */
+Object.defineProperty(S,"voicesActive",{get(){return S.voiced.size;}});
+
 const PERPETUAL_HOLD=45000; // ms a completed canopy holds before perpetual re-seed
 // slow JI progression the root walks through when Harmony Drift is on (ratios vs base root)
 const PROGRESSION=[1, 4/3, 3/2, 9/8, 5/4, 3/2, 4/3, 1];
@@ -482,9 +491,13 @@ const LATTICE=(function(){
   return [...m.values()].sort((a,b)=>a.r-b.r);
 })();
 function gravitate(ratio){
-  if(!P.gravity||!(ratio>0)) return ratio;
-  let oct=0,r=ratio;
-  while(r>=2){r/=2;oct++;} while(r<1){r*=2;oct--;}
+  // a ratio of 0 would spin `while(r<1){r*=2}` forever, and a NaN would travel
+  // all the way to an oscillator frequency and throw
+  if(!isFinite(ratio)||ratio<=0) return 1;
+  if(!P.gravity) return ratio;
+  let oct=0,r=ratio,guard=0;
+  while(r>=2&&guard++<2048){r/=2;oct++;} while(r<1&&guard++<2048){r*=2;oct--;}
+  if(guard>=2048) return 1;
   let best=null,bc=1e9;
   for(const L of LATTICE){
     if(Math.abs(1200*Math.log2(L.r/r))<=45 && L.cx<bc){ bc=L.cx; best=L.r; }
@@ -497,6 +510,7 @@ function foldFreq(f,depth){
   // every canopy voice into one narrow strip, which is most of where the mud
   // and the clashing beats were coming from.
   depth=depth||0;
+  if(!isFinite(f)||f<=0) return 55;
   const centre=58*Math.pow(2,Math.min(6.4,depth)*0.62);
   const lo=centre*0.62, hi=lo*2.7;
   let guard=0;
@@ -854,6 +868,7 @@ function startVoice(node){
   const sp=SPEC[node.species]||SPEC.fern;
   const h=k=>hash01(node.pathId+k);
   const t0=ac.currentTime, freq=node.freq;
+  if(!isFinite(freq)||freq<=0) return;      // never hand a bad value to an oscillator
   /* --- stochastic birth. A generation used to attack in one millisecond;
      spreading it over a few seconds is the difference between a chord stab
      and a canopy filling in. Deeper twigs arrive later, like light spreading. */
@@ -990,7 +1005,7 @@ function startVoice(node){
     mute,sendLP,send,amp,bpBase,bright,started:t,crushed:false,
     srcs:[o1,o2,o3,fmOsc,lfo,detLfo,filtLfo,nz,
           wanderW.src,filtW.src,gustW.src,gustB.src,tremW.src,panW&&panW.src]};
-  S.voicesActive++; S.voiced.add(node); syncDyn(node);
+  S.voiced.add(node); node.everVoiced=true; syncDyn(node);
   updateHeadroom();
   if(stagger>0.02) setTimeout(()=>{ if(node.voice)midiNoteOn(node); },stagger*1000);
   else midiNoteOn(node);
@@ -1100,7 +1115,7 @@ function decayVoice(node){
   v.srcs.forEach(o=>{ if(o){try{o.stop(endT);}catch(e){}} });
   midiNoteOff(node);
   setTimeout(()=>{ if(node.voice===v){ node.voice=null; S.voiced.delete(node);
-    S.voicesActive=Math.max(0,S.voicesActive-1); updateHeadroom(); } },(endT-t)*1000+250);
+    updateHeadroom(); } },(endT-t)*1000+250);
   // a dying limb keeps its own element until the tail is gone, then folds back in
   setTimeout(()=>{ if(S.nodes.has(node.pathId)&&!node.voice) syncDyn(node); },(endT-t)*1000+400);
 }
@@ -1131,7 +1146,7 @@ function stopVoice(node,fast){
   const stopT=t+fade+0.18;
   v.srcs.forEach(o=>{ if(o){try{o.stop(stopT);}catch(e){}} });
   midiNoteOff(node);
-  node.voice=null; S.voiced.delete(node); S.voicesActive=Math.max(0,S.voicesActive-1); updateHeadroom();
+  node.voice=null; S.voiced.delete(node); updateHeadroom();
   if(S.nodes.has(node.pathId)) syncDyn(node);
 }
 function updateUnder(){
@@ -1353,12 +1368,53 @@ function drainVoiceQ(){
   if(S.voiceQi>=q.length){ if(q.length){q.length=0;S.voiceQi=0;} return; }
   let budget=8;
   while(S.voiceQi<q.length && budget-->0){
+    // Surplus branches are visual-only, as designed — the remainder is dropped
+    // rather than held, or a completed canopy would top itself straight back up
+    // from the queue as voices aged out and never reach the entropy phase.
+    // Safe to drop now that the count is derived and cannot over-report.
+    if(S.voiced.size>=S.voiceBudget){ q.length=0; S.voiceQi=0; return; }
     const n=q[S.voiceQi++];
-    if(S.voicesActive>=S.voiceBudget){ q.length=0; S.voiceQi=0; return; }
-    if(!n||n.voice||!S.nodes.has(n.pathId)||S.pruned.has(n.pathId)) continue;
+    if(!n||n.voice||S.nodes.get(n.pathId)!==n||S.pruned.has(n.pathId)) continue;
     startVoice(n);
   }
   if(S.voiceQi>=q.length){ q.length=0; S.voiceQi=0; }
+}
+
+/* ---- watchdog -------------------------------------------------------
+   Runs about once a second. Everything here is a safety net rather than
+   normal operation: if any of it finds something to do, something already
+   went wrong, and the point is that the instrument keeps playing anyway
+   instead of needing a reload.                                          */
+function voiceWatchdog(){
+  if(!ac) return;
+  // (a) keep the voiced set honest, and silence anything a rebuild orphaned
+  for(const n of [...S.voiced]){
+    if(!n.voice){ S.voiced.delete(n); continue; }
+    if(S.nodes.get(n.pathId)!==n){
+      try{ stopVoice(n,0.3); }catch(e){ S.voiced.delete(n); }
+    }
+  }
+  // (b) browsers suspend audio contexts on their own schedule
+  if(ac.state==="suspended" && S.planted && S.running){ try{ac.resume();}catch(e){} }
+  // (c) last resort: a planted, running canopy with no voice at all cannot
+  //     recover on its own, because voices are only ever created for NEW
+  //     branches. Only act on silence that is NOT already explained: a limb
+  //     that sounded and then stopped without entering senescence is a limb
+  //     something took away. A canopy that aged out in the entropy phase has
+  //     every such limb marked decaying, so it is left to rest.
+  if(S.planted && S.running && S.voiced.size===0 && S.voiceQi>=S.voiceQ.length){
+    let lost=0;
+    for(const n of S.nodes.values())
+      if(n.everVoiced && !n.voice && !n.decaying && !S.pruned.has(n.pathId)){ lost++; break; }
+    if(!lost) return;
+    let revived=0;
+    for(const n of S.nodes.values()){
+      if(revived>=S.voiceBudget) break;
+      if(n.voice||n.decaying||S.pruned.has(n.pathId)) continue;
+      S.voiceQ.push(n); revived++;
+    }
+    if(revived) inspector("⚠ canopy had fallen silent — "+revived+" branches re-voiced.");
+  }
 }
 
 /* freshly-unfurled branches settle into the merged paths once they finish */
@@ -1695,6 +1751,17 @@ function inspector(t){ $("inspector").textContent=t; }
    6. MAIN TICK
    ============================================================ */
 function tick(){
+  // Voice construction, growth and the watchdog all live in this loop, so a
+  // single thrown frame used to take the instrument down for good. It now
+  // always re-arms: one bad frame costs a frame.
+  try{ tickBody(); }
+  catch(e){
+    if(!S.tickErr){ S.tickErr=1; console.error("tick error (recovered):",e);
+      inspector("⚠ recovered from an internal error — the instrument keeps running."); }
+  }
+  requestAnimationFrame(tick);
+}
+function tickBody(){
   const now=performance.now(), dt=now-S.lastT; S.lastT=now;
   if(S.running && S.planted){
     let fert=P.fert;
@@ -1762,7 +1829,7 @@ function tick(){
   }
   if(S.frame%18===0) updateSounding();
   if(S.seasons && S.frame%4===0) updateSeasons(now);
-  requestAnimationFrame(tick);
+  if(S.frame%45===0) voiceWatchdog();
 }
 /* live tally of currently-voicing Just-Intonation intervals */
 function updateSounding(){
@@ -1922,7 +1989,17 @@ bind("drift",v=>{ P.drift=v/100; if(!ac)return; const t=ac.currentTime;
   for(const n of S.nodes.values()){ const vo=n.voice; if(!vo)continue;
     if(vo.detDepth)vo.detDepth.gain.setTargetAtTime(1.5+P.drift*7,t,0.3);
     if(vo.filtDepth)vo.filtDepth.gain.setTargetAtTime(vo.bpBase*(0.12+P.drift*0.45),t,0.3); } });
-bind("density",v=>{ S.voiceBudget=v; });
+bind("density",v=>{ const grew=v>S.voiceBudget; S.voiceBudget=v;
+  // raising the budget used to do nothing until the tree was rebuilt, because
+  // voices are only ever created for newly-grown branches
+  if(grew && S.planted && ac){
+    let want=S.voiceBudget-S.voiced.size;
+    for(const n of S.nodes.values()){
+      if(want<=0) break;
+      if(n.voice||n.decaying||S.pruned.has(n.pathId)) continue;
+      S.voiceQ.push(n); want--;
+    }
+  } });
 // ---- ORGANICS ----
 bind("articulate",v=>{ P.articulate=v/100; },v=>v);
 bind("wander",v=>{ P.wander=v; if(!ac)return; const t=ac.currentTime;
