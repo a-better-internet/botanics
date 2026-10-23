@@ -377,7 +377,7 @@ const S={
   progRatio:1, progIdx:0, progAcc:0,
   // organics
   headroom:1, sway:true, bloomAcc:0, nextBloom:6000, voiced:new Set(), fresh:[], hover:null,
-  voiceQ:[], voiceQi:0, voiceTarget:0, err:{}, errLast:"", deadTicks:0, lastRevive:0,
+  voiceTarget:0, err:{}, errLast:"", deadTicks:0, lastRevive:0,
 };
 const P={ // params
   theta:27, seglen:34, ldecay:0.78, maxgen:6, species:"fern", wind:0,
@@ -1362,29 +1362,6 @@ function updateShimmer(now){
     if(n.leaf) n.leaf.setAttribute("opacity",(0.30+0.65*a).toFixed(2));
   }
 }
-/* Voices are constructed a few per frame rather than all inside render().
-   Rebuilding a dense canopy was blocking the main thread for ~150ms — more than
-   three audio buffers — which drops frames and splices anything the WAV
-   recorder is capturing at the time. The voices are already staggered by up to
-   several seconds before they sound, so spreading the CONSTRUCTION over a
-   handful of frames costs nothing audible. */
-function drainVoiceQ(){
-  const q=S.voiceQ;
-  if(S.voiceQi>=q.length){ if(q.length){q.length=0;S.voiceQi=0;} return; }
-  let budget=8;
-  while(S.voiceQi<q.length && budget-->0){
-    // Surplus branches are visual-only, as designed — the remainder is dropped
-    // rather than held, or a completed canopy would top itself straight back up
-    // from the queue as voices aged out and never reach the entropy phase.
-    // Safe to drop now that the count is derived and cannot over-report.
-    if(S.voiced.size>=S.voiceBudget){ q.length=0; S.voiceQi=0; return; }
-    const n=q[S.voiceQi++];
-    if(!n||n.voice||S.nodes.get(n.pathId)!==n||S.pruned.has(n.pathId)) continue;
-    startVoice(n);
-  }
-  if(S.voiceQi>=q.length){ q.length=0; S.voiceQi=0; }
-}
-
 /* How many voices the instrument INTENDS to have sounding. Declared rather
    than inferred, so "we lost voices and must restore them" can be told apart
    from "these limbs are spent and should stay quiet". Only senescence and
@@ -1456,7 +1433,7 @@ function reviveAudio(why){
       $("recwav").textContent="● REC .WAV"; $("recwav").classList.remove("on");
       $("recstat").textContent="recorder: stopped (audio engine was rebuilt)"; }
     for(const n of S.nodes.values()){ n.voice=null; }
-    S.voiced.clear(); S.voiceQ.length=0; S.voiceQi=0;
+    S.voiced.clear();
     const old=ac;
     // buildAudio() early-returns while ac is set, and every buffer belongs to
     // the old context, so these have to go before it can run again
@@ -1517,7 +1494,13 @@ function render(){
       node=makeNode(s);
       S.nodes.set(s.pathId,node);
       drawSeg(node, anim-->0);
-      S.voiceQ.push(node);          // built over the next few frames, not right now
+      // Synchronous, exactly as the original. Deferring this to a later frame
+      // was the whole bug: softRebuild destroys every voice immediately, so if
+      // construction waits on requestAnimationFrame — which does not run in a
+      // background tab, under throttling, or through a stalled frame — the
+      // canopy is left destroyed and never rebuilt. Nothing that creates sound
+      // may depend on the frame loop.
+      startVoice(node);
     } else updateSeg(node,s);
   }
   retargetVoices();
@@ -1824,7 +1807,6 @@ function section(name,fn){
   }
 }
 function tick(){
-  section("voices",drainVoiceQ);      // audio before anything else, always
   section("watchdog",()=>{ if((S.frame|0)%45===0) voiceWatchdog(); });
   section("growth",tickBody);
   section("visuals",tickVisuals);
@@ -2085,11 +2067,10 @@ bind("density",v=>{ const grew=v>S.voiceBudget; S.voiceBudget=v;
   // voices are only ever created for newly-grown branches
   retargetVoices();
   if(grew && S.planted && ac){
-    let want=S.voiceBudget-S.voiced.size;
     for(const n of S.nodes.values()){
-      if(want<=0) break;
+      if(S.voiced.size>=S.voiceBudget) break;
       if(n.voice||n.decaying||S.pruned.has(n.pathId)) continue;
-      S.voiceQ.push(n); want--;
+      try{ startVoice(n); }catch(e){ break; }
     }
   } });
 // ---- ORGANICS ----
@@ -2308,7 +2289,6 @@ function softRebuild(){
   // never starve the incoming canopy of its budget.)
   for(const n of S.nodes.values()){ if(n.voice)stopVoice(n,0.9); }
   S.nodes.clear(); S.voiced.clear(); S.fresh.length=0; S.hover=null;
-  S.voiceQ.length=0; S.voiceQi=0;
   clearTree();
   render();
 }
@@ -2339,7 +2319,7 @@ $("reset").onclick=()=>{
   S.gen=0;S.targetGen=0;S.decayCount=0;S.clockAcc=0;S.planted=false;S.running=false;S.completeAt=0;
   S.progRatio=1;S.progIdx=0;S.progAcc=0; S.maxDepth=0; S.agingList=null; $("harmstat").textContent="root: home key (I)";
   S.bloomAcc=0; S.nextBloom=6000; S.headroom=1; S.voiced.clear(); S.fresh.length=0; S.hover=null;
-  S.voiceQ.length=0; S.voiceQi=0; S.voiceTarget=0; S.deadTicks=0;
+  S.voiceTarget=0; S.deadTicks=0;
   clearTree();
   svg.setAttribute("viewBox","0 0 800 520");
   $("playpause").classList.remove("on");$("playpause").textContent="▶ RESUME";
